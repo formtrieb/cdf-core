@@ -5,6 +5,10 @@ All notable changes to `@formtrieb/cdf-core` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] — 2026-04-26
+
+Release-mechanism only — no code changes. First Trusted-Publishing (OIDC) release: published from GitHub Actions via `npm publish --provenance --access public` with no NPM_TOKEN. From this version onward every tag push (`v1.0.3`, …) auto-publishes via OIDC; the bootstrap token used for v1.0.1 has been revoked.
+
 ## [1.0.1] — 2026-04-26
 
 First usable public release. v1.0.0 was published earlier the same day
