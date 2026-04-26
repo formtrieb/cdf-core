@@ -1,6 +1,6 @@
 {
   "name": "@formtrieb/cdf-core",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Core library for the Component Description Format (CDF) — parsing, validation, profile inference, token-tree, and analysis primitives. Pure functions, framework-agnostic.",
   "license": "Apache-2.0",
   "type": "module",
