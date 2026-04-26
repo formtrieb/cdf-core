@@ -1,0 +1,170 @@
+# Component Spec: _PaginationPageItem
+# Private sub-component of NumericPagination.
+# Represents a single clickable page number within the pagination bar.
+# Displays the page number as text and uses the secondary controls token
+# pattern for state-driven color changes. Active state indicates the
+# currently selected page.
+
+name: PaginationPageItem
+category: Layout
+description: >
+  A single page number button within the NumericPagination component.
+  Shows a numeric label inside a circular hit area. The active state
+  visually marks the current page with a filled background. Uses the
+  secondary controls token pattern for hover, pressed, and disabled
+  state feedback.
+
+# --- Theme Axes (CSS cascade context) --------------------------------------------------------
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*
+  device:
+    values: [Desktop, Tablet, Mobile]
+    data_attribute: data-device
+    affects: dimension.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# --- Properties -------------------------------------------------------------------------------
+
+properties:
+  pageNumber:
+    type: Number
+    required: true
+    description: >
+      The page number to display. Rendered as text inside the circular
+      hit area. Set by the parent NumericPagination component.
+
+# --- States -----------------------------------------------------------------------------------
+
+states:
+  interaction:
+    values: [enabled, hover, pressed, active, disabled]
+    runtime: true
+    description: >
+      Standard interaction states plus active. Active indicates the
+      currently selected page — renders a filled background to
+      distinguish it from other page items. Disabled is applied when
+      the page item is not interactive (e.g. in a loading state).
+
+# --- Anatomy ----------------------------------------------------------------------------------
+
+anatomy:
+  container:
+    element: button
+    description: >
+      Circular button element. Fixed size (dimension.8x square) with
+      full border-radius. Background appears on hover, pressed, and
+      active states. No background in enabled/disabled states.
+
+  label:
+    element: span
+    description: >
+      The page number text. Uses label/base typography with regular
+      weight. Color shifts per interaction state — enabled text uses
+      secondary text token, hover/pressed use text-on-color tokens
+      for contrast against the filled background.
+
+# --- Events -----------------------------------------------------------------------------------
+
+events:
+  selected:
+    type: Number
+    description: >
+      Emitted when the page item is clicked or activated via keyboard.
+      Carries the page number. The parent NumericPagination component
+      handles this event and re-emits it as pageChange.
+
+# --- Tokens -----------------------------------------------------------------------------------
+
+tokens:
+  container:
+    width: dimension.8x
+    height: dimension.8x
+    border-radius: radius.full
+    background--hover: color.controls.secondary.background.hover
+    background--pressed: color.controls.secondary.background.pressed
+    background--active: color.controls.secondary.background.enabled
+
+  label:
+    color: "color.controls.secondary.text.{interaction}"
+    color--hover: color.controls.secondary.text-on-color.hover
+    color--pressed: color.controls.secondary.text-on-color.pressed
+    color--disabled: color.controls.secondary.text.disabled
+    font-size: fontSizes.label.base
+    font-weight: fontWeights.regular
+    font-family: fontFamilies.baseFamily
+    line-height: lineHeights.label.base
+
+  focus:
+    pattern: double-ring
+    applies_to: container
+
+# --- Token Gaps -------------------------------------------------------------------------------
+
+token_gaps:
+  - "color.controls.secondary.text.pressed — placeholder (#f305b7)"
+  - "color.controls.secondary.text.disabled — placeholder (#f305b7)"
+  - "color.controls.secondary.text-on-color.hover — placeholder (#f305b7)"
+  - "color.controls.secondary.text-on-color.pressed — placeholder (#f305b7)"
+
+# --- CSS Architecture -------------------------------------------------------------------------
+
+css_architecture:
+  selector: .ft-pagination-page-item
+  private_custom_properties:
+    - --_bg       # Resolved background per interaction state
+    - --_text     # Resolved text color per interaction state
+
+# --- Accessibility ----------------------------------------------------------------------------
+
+accessibility:
+  element: button
+  focus-visible: true
+  keyboard:
+    Enter: Navigate to this page.
+    Space: Navigate to this page.
+  aria:
+    - "aria-current='page' when interaction=active (marks the current page)"
+    - "aria-disabled='true' when interaction=disabled"
+    - "aria-label='Page {pageNumber}' for screen reader context"
+  min-target-size: dimension.8x
+  contrast: >
+    Enabled text uses color.controls.secondary.text.enabled against page background —
+    validated for 4.5:1. Hover/pressed text uses text-on-color tokens against filled
+    background — validated for 4.5:1. Active state uses secondary.background.enabled
+    with standard text color.
+
+# --- Behavior --------------------------------------------------------------------------------
+
+behavior:
+  transitions:
+    - property: background-color
+      element: container
+      duration: 120ms
+      easing: ease-in-out
+    - property: color
+      element: label
+      duration: 120ms
+      easing: ease-in-out
+
+# --- Figma ------------------------------------------------------------------------------------
+
+figma:
+  component_set_name: "_numeric-pagination-part/<pages>"
+  component_set_id: "413:5192"
+  variant_properties:
+    state: [enabled, hover, pressed, active, disabled]
+  variant_to_cdf_mapping:
+    state:
+      enabled: "interaction: enabled"
+      hover: "interaction: hover"
+      pressed: "interaction: pressed"
+      active: "interaction: active"
+      disabled: "interaction: disabled"
+  total_variants: 5

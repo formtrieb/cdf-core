@@ -1,0 +1,160 @@
+# Component Spec: Status Chip
+# Non-interactive status label — purely visual, uses semantic colors.
+# Fundamentally different from Tag/SelectionTag: no interaction, no focus,
+# no keyboard. Uses surface/text tokens instead of controls.* tokens.
+
+name: StatusChip
+category: Status
+description: >
+  Non-interactive pill displaying a status or condition using semantic color.
+  Communicates state at a glance (info, success, error, warning, neutral).
+  Two hierarchy levels: primary (filled, high emphasis) for detail pages and
+  dashboards, secondary (outlined/soft, low emphasis) for dense contexts
+  like tables. Not interactive — for toggleable selection use SelectionTag,
+  for removable values use Tag.
+
+# ─── Theme Axes (CSS cascade context) ───────────────────────────────────────────
+# Only semantic axis applies for color. No device-aware sizing — StatusChip
+# is a static element, not an interactive control. Uses Foundation dimensions
+# directly, not controls.height.* tokens.
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.surface.*, color.text.*, color.interaction.background.*
+
+# ─── Properties (orthogonal axes) ───────────────────────────────────────────────
+
+properties:
+  intent:
+    type: enum
+    values: [info, neutral, success, warning, error]
+    default: neutral
+    description: >
+      Semantic meaning communicated by color. Each intent maps to a
+      dedicated color scale in the token system. The name describes
+      what the status means, not how it looks — clients may remap
+      the underlying colors.
+    token_mapping:
+      info: color.*.info.*
+      neutral: color.*.neutral.* / color.text.primary
+      success: color.*.positive.*
+      warning: color.*.warning.* / color.surface.yellow.*
+      error: color.*.negative.*
+
+  hierarchy:
+    type: enum
+    values: [primary, secondary]
+    default: primary
+    description: >
+      Visual emphasis level. Primary uses a filled background with
+      inverted (high-contrast) text — stands out on any surface.
+      Secondary uses a tinted surface background with colored text —
+      subtler, for dense layouts. Same concept as Button hierarchy
+      but with only two levels.
+
+# ─── States ───────────────────────────────────────────────────────────────────────
+# None. StatusChip is purely visual — it has no interaction states.
+# It does not receive focus and has no keyboard behavior.
+
+states: {}
+
+# ─── Anatomy ────────────────────────────────────────────────────────────────────
+
+anatomy:
+  container:
+    element: span
+    description: >
+      Rounded rectangle wrapper. Purely presentational — uses <span> not
+      <button> or <div>. Inline element that flows with text content.
+
+  label:
+    element: text
+    description: >
+      Status text content. Keep short (1-2 words) for scannability.
+      Consumer-provided (i18n).
+
+# ─── Token Mapping ──────────────────────────────────────────────────────────────
+# StatusChip uses the dedicated color.system-status.* token group — NOT
+# color.controls.* (interactive) or color.surface/text.* (generic).
+#
+# Pattern: color.system-status.{intent}.{element}.{hierarchy}
+#
+# The intent names in tokens use semantic naming:
+#   info → info, neutral → neutral, success → positive,
+#   warning → warning, error → negative
+#
+# Primary hierarchy: filled background, no stroke, text-on-color text.
+# Secondary hierarchy: soft background, colored stroke, colored text.
+
+tokens:
+  container:
+    sizing: hug  # No fixed dimensions — hugs label content
+    background: color.system-status.{intent}.background.{hierarchy}
+    border-color: color.system-status.{intent}.stroke.{hierarchy}
+    border-width: borderWidth.thin
+    border-radius: radius.xs  # Rounded rectangle (4px), not pill
+    padding-inline: spacing.component.4x
+    padding-block: spacing.component.2x
+
+  label:
+    color: color.system-status.{intent}.text-on-color.{hierarchy}
+    typography: Label.Small.default
+
+# ─── Intent → Token Name Mapping ──────────────────────────────────────────────
+# The spec intent property uses consumer-friendly names. The token system
+# uses semantic names. Mapping:
+#   intent=info    → token path: info
+#   intent=neutral → token path: neutral
+#   intent=success → token path: positive
+#   intent=warning → token path: warning
+#   intent=error   → token path: negative
+
+# ─── Token Gaps ───────────────────────────────────────────────────────────────────
+
+token_gaps: []  # color.system-status.* fully populated for all intents × hierarchies
+
+# ─── Accessibility ──────────────────────────────────────────────────────────────
+
+accessibility:
+  element: span  # Inline, non-interactive — no role needed
+  focus-visible: false  # Not focusable
+  keyboard: {}  # No keyboard behavior
+  aria:
+    - "No ARIA role needed — the text content is the accessible name"
+    - "Do not use color alone to convey meaning — the label text must also communicate the status"
+    - "If used without visible text (icon-only edge case), add aria-label"
+    - "When used alongside an element it describes, consider aria-describedby or proximity alone"
+  contrast: >
+    Primary: inverted text on filled background — pre-validated for 4.5:1.
+    Secondary: colored text on tinted surface — validate per-intent. Warning
+    (yellow text on yellow surface) requires extra attention for contrast.
+
+# ─── References ─────────────────────────────────────────────────────────────────
+
+references:
+  - name: PrimeNG Tag
+    url: https://primeng.org/tag
+    use: >
+      Angular implementation reference. PrimeNG calls this "Tag" with
+      severity prop (success, info, warn, danger). Covers rounded styling,
+      icon placement, and Pass Through architecture.
+  - name: Design Systems Surf — Chip Blueprint
+    url: https://designsystems.surf/blueprints/chip
+    use: >
+      Cross-system patterns for status chip anatomy and best practices.
+
+# ─── Variants Matrix (for Figma generation) ─────────────────────────────────────
+
+figma:
+  component_set_name: StatusChip
+  variant_properties:
+    intent: [info, neutral, success, warning, error]
+    hierarchy: [primary, secondary]
+  excluded_combinations: []
+  total_variants: 10  # 5 intent × 2 hierarchy
+  notes: >
+    No device axis — StatusChip uses static dimensions, not device-aware
+    controls.height tokens. No interaction states — purely visual.
+    Extremely compact variant matrix compared to interactive components.

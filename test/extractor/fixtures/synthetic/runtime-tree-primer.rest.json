@@ -1,0 +1,80 @@
+{
+  "_synthetic": "Same logical tree as runtime-tree-primer.json, in REST shape. Pair used by source-parity.test.ts to assert T0 ≡ T1 walker output (modulo allowed-deltas).",
+  "name": "fixture-runtime-primer",
+  "document": {
+    "children": [
+      {
+        "id": "0:2",
+        "name": "Controls",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "10:1",
+            "type": "COMPONENT_SET",
+            "name": "Button",
+            "children": [
+              { "id": "10:2", "type": "COMPONENT", "name": "Variant=primary, State=rest" },
+              { "id": "10:3", "type": "COMPONENT", "name": "Variant=primary, State=hover" },
+              { "id": "10:4", "type": "COMPONENT", "name": "Variant=secondary, State=rest" }
+            ],
+            "componentPropertyDefinitions": {
+              "Variant": { "type": "VARIANT", "variantOptions": ["primary", "secondary"] },
+              "State": { "type": "VARIANT", "variantOptions": ["rest", "hover"] }
+            }
+          },
+          {
+            "id": "10:5",
+            "type": "COMPONENT_SET",
+            "name": "TextField",
+            "children": [
+              { "id": "10:6", "type": "COMPONENT", "name": "State=rest" },
+              { "id": "10:7", "type": "COMPONENT", "name": "State=focus" }
+            ],
+            "componentPropertyDefinitions": {
+              "State": { "type": "VARIANT", "variantOptions": ["rest", "focus"] }
+            }
+          },
+          {
+            "id": "10:8",
+            "type": "COMPONENT",
+            "name": "Divider"
+          }
+        ]
+      },
+      {
+        "id": "0:3",
+        "name": "Display",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "20:1",
+            "type": "COMPONENT_SET",
+            "name": "Badge",
+            "children": [
+              { "id": "20:2", "type": "COMPONENT", "name": "Tone=info" }
+            ],
+            "componentPropertyDefinitions": {
+              "Tone": { "type": "VARIANT", "variantOptions": ["info"] }
+            }
+          },
+          {
+            "id": "20:3",
+            "type": "COMPONENT",
+            "name": "icon-search"
+          },
+          {
+            "id": "20:4",
+            "type": "FRAME",
+            "name": "_doc-button-usage",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "componentSets": {
+    "10:1": { "name": "Button", "description": "Primary interactive control. Use for triggering actions." },
+    "10:5": { "name": "TextField" },
+    "20:1": { "name": "Badge", "description": "Status indicator. Sits next to text." }
+  }
+}

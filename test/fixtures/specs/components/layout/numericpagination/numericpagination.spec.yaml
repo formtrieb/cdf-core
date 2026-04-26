@@ -1,0 +1,371 @@
+# Component Spec: NumericPagination
+# Page-based navigation component with numbered page links, previous/next
+# arrows, and optional overflow indicators. Used to navigate through
+# paginated content such as search results, data tables, or article lists.
+
+name: NumericPagination
+category: Layout
+description: >
+  A page-based navigation component that displays numbered page links with
+  optional overflow indicators. Users navigate paginated content by clicking
+  page numbers or using previous/next arrow buttons. When the page count
+  exceeds the visible range, ellipsis overflow indicators appear to signal
+  hidden pages — clicking them opens a popover for direct page jumps.
+  The component computes its visual layout from currentPage and totalPages,
+  determining which pages to show, where to place overflow indicators, and
+  which navigation buttons to disable.
+
+# --- Theme Axes (CSS cascade context) --------------------------------------------------------
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*, color.interaction.*
+  device:
+    values: [Desktop, Tablet, Mobile]
+    data_attribute: data-device
+    affects: dimension.*, spacing.component.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# --- Properties (consumer-configurable inputs) ------------------------------------------------
+
+properties:
+  currentPage:
+    type: Number
+    default: 1
+    description: >
+      The 1-based index of the currently active page. Determines which
+      page item renders in the active state, which navigation buttons
+      are disabled, and where overflow indicators appear.
+
+  totalPages:
+    type: Number
+    required: true
+    description: >
+      Total number of pages available. Together with currentPage,
+      drives the entire visual layout of the component.
+
+  visiblePages:
+    type: Number
+    default: 5
+    description: >
+      Maximum number of page links to display before showing overflow
+      indicators. Typically an odd number (5 or 7) so the current page
+      can be centered in the visible range.
+
+# --- States -----------------------------------------------------------------------------------
+
+states:
+  page-position:
+    values: [first, center, last, trailing-overflow, leading-overflow, leading-trailing-overflow]
+    runtime: true
+    description: >
+      Derived visual state computed from currentPage, totalPages, and
+      visiblePages. Determines which structural elements are visible
+      and which navigation buttons are disabled. Not set by the consumer
+      directly — calculated internally by the component.
+
+# --- Anatomy ----------------------------------------------------------------------------------
+
+anatomy:
+  container:
+    element: nav
+    description: >
+      Root navigation landmark. Uses horizontal flex layout with the
+      previous button, page list, and next button as direct children.
+
+  previousButton:
+    component: IconButton
+    description: >
+      Navigates to the previous page. Uses tertiary hierarchy with a
+      left-pointing chevron icon. Disabled when currentPage is 1
+      (page-position=first). Fixed size dimension.8x square.
+    locked:
+      hierarchy: tertiary
+      icon: chevron_left
+      size: base
+
+  pageList:
+    element: div
+    description: >
+      Horizontal container for page items and overflow indicators.
+      Uses spacing.component.1x gap between items and
+      spacing.component.4x horizontal padding to separate from
+      the navigation buttons.
+
+  pageItem:
+    component: PaginationPageItem
+    description: >
+      Repeated for each visible page number. One instance has
+      interaction=active to indicate the current page. Others are
+      clickable buttons navigating to their respective page number.
+
+  overflowIndicator:
+    component: PaginationOverflow
+    description: >
+      Appears when pages are hidden beyond the visible range. Can
+      appear at the leading position (before visible pages), trailing
+      position (after visible pages), or both. Clicking opens a
+      companion popover for direct page jumps.
+
+  nextButton:
+    component: IconButton
+    description: >
+      Navigates to the next page. Uses tertiary hierarchy with a
+      right-pointing chevron icon. Disabled when currentPage equals
+      totalPages (page-position=last). Fixed size dimension.8x square.
+    locked:
+      hierarchy: tertiary
+      icon: chevron_right
+      size: base
+
+# --- Derived ----------------------------------------------------------------------------------
+
+derived:
+  previousDisabled:
+    from: currentPage
+    condition: "currentPage === 1"
+    description: >
+      Previous button is disabled when the user is on the first page.
+
+  nextDisabled:
+    from: currentPage
+    condition: "currentPage === totalPages"
+    description: >
+      Next button is disabled when the user is on the last page.
+
+  hasLeadingOverflow:
+    from: currentPage
+    condition: "currentPage > Math.ceil(visiblePages / 2) + 1"
+    description: >
+      A leading overflow indicator appears when there are hidden pages
+      before the visible range. Also depends on totalPages and visiblePages.
+
+  hasTrailingOverflow:
+    from: currentPage
+    condition: "currentPage < totalPages - Math.floor(visiblePages / 2)"
+    description: >
+      A trailing overflow indicator appears when there are hidden pages
+      after the visible range. Also depends on totalPages and visiblePages.
+
+# --- Events -----------------------------------------------------------------------------------
+
+events:
+  pageChange:
+    type: number
+    description: >
+      Emitted when the user selects a different page — via page item
+      click, previous/next button, or overflow popover selection.
+      Carries the new 1-based page number.
+
+# --- Tokens -----------------------------------------------------------------------------------
+
+tokens:
+  previousButton:
+    width: dimension.8x
+    height: dimension.8x
+    icon-color: color.controls.tertiary.icon.enabled
+    icon-color--disabled: color.controls.tertiary.icon.disabled
+    padding: spacing.component.none
+    gap: spacing.component.none
+
+  pageList:
+    gap: spacing.component.1x
+    padding-inline: spacing.component.4x
+
+  nextButton:
+    width: dimension.8x
+    height: dimension.8x
+    icon-color: color.controls.tertiary.icon.enabled
+    icon-color--disabled: color.controls.tertiary.icon.disabled
+    padding: spacing.component.none
+    gap: spacing.component.none
+
+  focus:
+    pattern: double-ring
+    applies_to: [previousButton, nextButton]
+
+# --- Token Gaps -------------------------------------------------------------------------------
+
+token_gaps: []
+
+# --- CSS Architecture -------------------------------------------------------------------------
+
+css_architecture:
+  selector: .ft-numeric-pagination
+  class_pattern: "ft-numeric-pagination__{child}"
+  prefix: ft
+  methodology: BEM
+
+# --- Accessibility ----------------------------------------------------------------------------
+
+accessibility:
+  element: nav
+  focus-visible: true
+  keyboard:
+    Tab: Move focus between previous button, page items, overflow indicators, and next button.
+    Enter: Activate the focused page item or navigation button.
+    Space: Activate the focused page item or navigation button.
+  aria:
+    - "The nav element uses aria-label='Pagination' to identify the landmark"
+    - "The active page item uses aria-current='page'"
+    - "Disabled navigation buttons use aria-disabled='true' (prefer over HTML disabled for focusability)"
+    - "Each page item has aria-label='Page {n}' for screen reader context"
+    - "Overflow indicators have aria-label='Show more pages' and aria-haspopup='true'"
+  min-target-size: dimension.8x
+  contrast: >
+    Page item text uses color.controls.secondary.text tokens against page
+    background — pre-validated for 4.5:1. Navigation arrow icons use
+    color.controls.tertiary.icon tokens — validated for 3:1 non-text contrast.
+    Active page background uses color.controls.secondary.background.enabled
+    which provides sufficient contrast against the page surface.
+
+# --- Behavior --------------------------------------------------------------------------------
+
+behavior:
+  page_computation: >
+    The visible page range is computed from currentPage, totalPages, and
+    visiblePages. The algorithm centers the current page within the visible
+    window when possible, clamping to the edges when near the first or last
+    page. Overflow indicators replace the first and/or last visible slots
+    when hidden pages exist beyond the range.
+
+  transitions:
+    - property: background-color
+      element: pageItem
+      duration: 120ms
+      easing: ease-in-out
+    - property: color
+      element: pageItem
+      duration: 120ms
+      easing: ease-in-out
+
+# --- References -------------------------------------------------------------------------------
+
+references:
+  - name: WAI-ARIA APG -- Pagination
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/pagination/
+    use: >
+      Canonical pagination pattern. Uses nav landmark with aria-label,
+      aria-current='page' on the active link, and standard button
+      semantics for navigation controls.
+  - name: WCAG 2.4.8 Location
+    url: https://www.w3.org/WAI/WCAG21/Understanding/location.html
+    use: >
+      Users should be able to determine their location within a set of pages.
+      The active page indicator (aria-current='page') satisfies this.
+
+# --- Figma ------------------------------------------------------------------------------------
+
+figma:
+  component_set_name: "Pagination/ Numeric Pagination"
+  component_set_id: "413:5223"
+  variant_properties:
+    page-position:
+      - first
+      - center
+      - last
+      - trailing-overflow
+      - leading-overflow
+      - leading-trailing-overflow
+  variant_to_cdf_mapping:
+    page-position:
+      first: "page-position: first (currentPage=1, previous disabled)"
+      center: "page-position: center (currentPage in middle, both buttons enabled)"
+      last: "page-position: last (currentPage=totalPages, next disabled)"
+      trailing-overflow: "page-position: trailing-overflow (hidden pages after visible range)"
+      leading-overflow: "page-position: leading-overflow (hidden pages before visible range)"
+      leading-trailing-overflow: "page-position: leading-trailing-overflow (overflow on both sides)"
+  total_variants: 6
+  sub_components:
+    - name: PaginationPageItem
+      figma_name: "_numeric-pagination-part/<pages>"
+      component_set_id: "413:5192"
+      scope: private
+      classification: INTERACTIVE
+      spec_file: _pagination-page-item.spec.yaml
+      interaction_audit:
+        evidence:
+          state_axes:
+            - name: state
+              values: [enabled, hover, pressed, active, disabled]
+              interactive_values: [hover, pressed, active, disabled]
+          reactions:
+            - trigger: ON_HOVER
+              action: CHANGE_TO
+              destination: state=hover
+            - trigger: ON_PRESS
+              action: CHANGE_TO
+              destination: state=pressed
+            - trigger: ON_CLICK
+              action: CHANGE_TO
+              destination: state=active
+          overlay_targets: []
+        suggested_impact:
+          aria_additions:
+            - aria-current or aria-selected
+            - aria-disabled
+    - name: PaginationOverflow
+      figma_name: "_numeric-pagination-part/<overflow>"
+      component_set_id: "413:5203"
+      scope: private
+      classification: INTERACTIVE
+      spec_file: _pagination-overflow.spec.yaml
+      interaction_audit:
+        evidence:
+          state_axes:
+            - name: state
+              values: [enabled, hover, pressed, open, disabled]
+              interactive_values: [hover, pressed, open, disabled]
+          reactions:
+            - trigger: ON_HOVER
+              action: CHANGE_TO
+              destination: state=hover
+            - trigger: ON_PRESS
+              action: CHANGE_TO
+              destination: state=pressed
+            - trigger: ON_CLICK
+              action: CHANGE_TO
+              destination: state=open
+          overlay_targets: []
+        suggested_impact:
+          element_change: "\u2192 button"
+          aria_additions:
+            - aria-disabled
+            - aria-expanded
+          behavior_additions:
+            - open/close companion element on click (popover, dropdown, or disclosure)
+            - close on Escape
+          note: >
+            Has open/expanded state but no explicit OPEN_OVERLAY reaction.
+            Companion popover is implementation-defined.
+    - name: IconButton
+      figma_name: "Icon Button"
+      component_set_id: "282:2266"
+      scope: standalone
+      classification: INTERACTIVE
+      spec_file: ../../actions/iconbutton.spec.yaml
+      interaction_audit:
+        evidence:
+          state_axes:
+            - name: state
+              values: [enabled, hover, pressed, disabled, pending]
+              interactive_values: [hover, pressed, disabled]
+          reactions:
+            - trigger: ON_HOVER
+              action: CHANGE_TO
+              destination: state=hover
+          overlay_targets: []
+        suggested_impact:
+          aria_additions:
+            - aria-disabled
+  notes: >
+    Figma uses page-position as a variant axis to show different visual
+    configurations of the pagination. In code, this is not a consumer property
+    but a derived state computed from currentPage, totalPages, and visiblePages.
+    The component dynamically renders the correct combination of page items,
+    overflow indicators, and disabled navigation buttons based on these inputs.

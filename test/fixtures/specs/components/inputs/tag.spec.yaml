@@ -1,0 +1,217 @@
+# Component Spec: Tag
+# Compact, always-dismissible element representing a removable value.
+# Composed by ComboBox for multi-select chips. Also used standalone for
+# removable filters, contacts, or user-added tokens.
+
+name: Tag
+category: Inputs
+description: >
+  Compact pill element representing a value that can be removed. Always
+  dismissible — if it can't be removed, use SelectionTag (toggleable) or
+  StatusChip (non-interactive status display). Used standalone for removable
+  filters or settings, and composed inside ComboBox for multi-select values.
+  Two hierarchy levels: accent (filled brand) for emphasis, secondary
+  (outlined) for neutral contexts.
+
+# ─── Theme Axes (CSS cascade context) ───────────────────────────────────────────
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*, color.text.*
+  device:
+    values: [Desktop, Tablet, Mobile]
+    data_attribute: data-device
+    affects: controls.height.*, controls.minTarget, spacing.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# ─── Properties (orthogonal axes) ───────────────────────────────────────────────
+
+properties:
+  size:
+    type: enum
+    values: [base, small]
+    default: base
+    description: >
+      Controls height and internal spacing. When composed inside ComboBox,
+      the parent maps its own size to the Tag size (ComboBox.base → Tag.small,
+      ComboBox.small → Tag.xsmall). Standalone Tags typically use base.
+    # Note: xsmall may be needed for ComboBox.small — defer until ComboBox
+    # implementation confirms whether small is sufficient.
+
+  hierarchy:
+    type: enum
+    values: [accent, secondary]
+    default: secondary
+    description: >
+      Visual emphasis level. Accent uses accent hierarchy tokens (filled
+      background, inverted text). Secondary uses secondary hierarchy tokens
+      (outlined, regular text). Maps to color.controls.{accent|secondary}.*
+      in the token system.
+
+# ─── States ───────────────────────────────────────────────────────────────────────
+
+states:
+  interaction:
+    values: [enabled, hover, pressed, disabled]
+    runtime: true
+    description: >
+      Standard interaction states for the dismiss action. Hover/pressed
+      apply to the dismissButton, but the entire Tag responds visually
+      (container background shift on hover). Disabled prevents dismissal
+      and reduces visual prominence.
+
+# ─── Anatomy ────────────────────────────────────────────────────────────────────
+# Minimal structure — pill with optional icon, label, and dismiss button.
+
+anatomy:
+  container:
+    element: box
+    description: >
+      Rounded rectangle wrapper. Handles background, stroke, radius, height.
+      Uses radius.xs for subtle rounding — consistent with StatusChip.
+
+  leadingIcon:
+    component: Icon
+    description: >
+      Optional icon before the label. Decorative or contextual
+      (e.g., avatar placeholder, category icon).
+    conditional: has leading icon
+    locked:
+      size:
+        base: xsmall
+        small: xsmall
+      color: controlled  # Driven by hierarchy + interaction state via tokens
+
+  label:
+    element: text
+    description: >
+      Tag text content. Keep short (1-2 words) for scannability.
+      Consumer-provided.
+
+  dismissButton:
+    element: button
+    description: >
+      Removes the tag. Always present — Tag is dismissible by definition.
+      Uses a close/× icon. Needs an invisible touch area expansion when
+      the visual size is below the minimum touch target (24×24px).
+    locked:
+      icon: close
+      size:
+        base: xsmall
+        small: xsmall
+
+# ─── Token Mapping ──────────────────────────────────────────────────────────────
+# Appearance maps to control hierarchy:
+#   accent    → color.controls.accent.*    (filled background, text-on-color)
+#   secondary → color.controls.secondary.* (outlined, text-on-color)
+#
+# Both hierarchys use text-on-color tokens (not plain text tokens).
+
+tokens:
+  container:
+    background--accent: color.controls.accent.background.{interaction}
+    background--secondary: color.controls.secondary.background.{interaction}
+    border-color--accent: color.controls.accent.stroke.{interaction}
+    border-color--secondary: color.controls.secondary.stroke.{interaction}
+    border-width: borderWidth.thin
+    border-radius: radius.xs  # Rounded rectangle, not pill
+    height: controls.height.{size}
+    padding-inline: spacing.component.4x
+    gap: spacing.component.2x  # Space between icon, label, dismiss
+
+  label:
+    color--accent: color.controls.accent.text-on-color.{interaction}
+    color--secondary: color.controls.secondary.text-on-color.{interaction}
+    typography:
+      base: Label.Small.default
+      small: Label.Small.default
+
+  leadingIcon:
+    color--accent: color.controls.accent.icon-on-color.{interaction}
+    color--secondary: color.controls.secondary.icon-on-color.{interaction}
+    size:
+      base: icon.size.xsmall
+      small: icon.size.xsmall
+
+  dismissButton:
+    color--accent: color.controls.accent.icon-on-color.{interaction}
+    color--secondary: color.controls.secondary.icon-on-color.{interaction}
+    size:
+      base: icon.size.xsmall
+      small: icon.size.xsmall
+    min-target-size: controls.minTarget  # Invisible touch area expansion
+
+  focus:
+    pattern: double-ring
+    applies_to: container
+
+# ─── Token Gaps ───────────────────────────────────────────────────────────────────
+
+token_gaps: []  # Accent and secondary hierarchies fully populated
+
+# ─── Accessibility ──────────────────────────────────────────────────────────────
+
+accessibility:
+  element: div  # Container is not interactive itself
+  focus-visible: true
+  keyboard:
+    Delete: Dismiss the tag (remove it).
+    Backspace: Dismiss the tag (remove it).
+    Enter: >
+      Activate the dismiss button when focused. Equivalent to clicking ×.
+    Tab: >
+      Move focus to/from the tag. When inside a ComboBox chipList,
+      arrow keys may navigate between tags instead.
+  aria:
+    - "The dismiss button uses role='button' (native <button>) with aria-label='Remove {label}' for screen readers"
+    - "aria-disabled: true — when interaction=disabled, on the dismiss button"
+    - "When inside a group (ComboBox chipList), the group uses role='list' and each Tag uses role='listitem'"
+    - "Live region: announce removal — '{label} removed' when dismissed, for screen reader feedback"
+  min-target-size: controls.minTarget
+  contrast: >
+    Accent hierarchy uses text-on-color tokens pre-validated for 4.5:1
+    contrast against brand background. Secondary uses standard text tokens
+    validated against secondary background.
+
+# ─── References ─────────────────────────────────────────────────────────────────
+
+references:
+  - name: WAI-ARIA APG — No specific tag pattern
+    url: https://www.w3.org/WAI/ARIA/apg/
+    use: >
+      No canonical ARIA pattern for dismissible tags. Follow button
+      semantics for the dismiss action, with live region announcements
+      for removals.
+  - name: PrimeNG Chip
+    url: https://primeng.org/chip
+    use: >
+      Angular implementation reference. Covers removable chips with
+      optional icons and images.
+  - name: Design Systems Surf — Chip Blueprint
+    url: https://designsystems.surf/blueprints/chip
+    use: >
+      Cross-system analysis of chip/tag anatomy, states, and usage patterns.
+
+# ─── Variants Matrix (for Figma generation) ─────────────────────────────────────
+
+figma:
+  component_set_name: Tag
+  variant_properties:
+    device: [desktop, tablet, mobile]
+    size: [base, small]
+    hierarchy: [accent, secondary]
+    interaction: [enabled, hover, pressed, disabled]
+  component_properties:
+    leadingIcon: boolean  # Toggle, not a variant axis
+  excluded_combinations: []
+  total_variants: 48  # 3 device × 2 size × 2 hierarchy × 4 state
+  notes: >
+    Leading icon is a component property (boolean toggle). The dismiss
+    button (×) is always present — no toggle needed. Where other DSes
+    separate textField/standAlone modes, this spec uses size to handle
+    the distinction (small = inside inputs).

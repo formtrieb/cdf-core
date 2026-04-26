@@ -1,0 +1,39 @@
+name: WithOrphans
+version: "1.0.0"
+cdf_version: ">=1.0.0"
+dtcg_version: "2025.10"
+description: "Profile with deliberate orphans for test."
+
+vocabularies:
+  hierarchy:
+    description: "hierarchy"
+    values: [primary, secondary, tertiary]   # tertiary unused → orphan
+  intent:
+    description: "intent"
+    values: [info, warn]                     # both referenced in theming
+
+token_grammar:
+  g1: { pattern: "color.{hierarchy}", dtcg_type: color, description: "x" }
+
+theming:
+  modifiers:
+    intent:
+      description: "intent modifier"
+      contexts: [info, warn]                 # references intent vocab
+  set_mapping: {}
+
+interaction_patterns:
+  used_pattern:
+    description: "used by components"
+    states: [enabled, hover, pressed]
+  orphan_pattern:
+    description: "referenced by no component"
+    states: [enabled, active]
+
+naming:
+  css_prefix: "wo-"
+  token_prefix: "--wo-"
+  methodology: BEM
+  pattern: "block__element--modifier"
+  casing: { components: PascalCase }
+  reserved_names: {}

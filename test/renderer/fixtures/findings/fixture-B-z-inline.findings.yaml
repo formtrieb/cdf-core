@@ -1,0 +1,58 @@
+schema_version: findings-v1
+ds_name: zinline
+generated_at: "2026-04-23T20:00:00Z"
+generated_by:
+  skill_version: scope-A-test
+  source_phase_yamls:
+    - phase-1-output.yaml
+findings:
+  - id: "§p1-Z1"
+    cluster: Z
+    title: Casing drift Icon/icon
+    observation: Two axes share lowercase form
+    source_phase: 1
+    user_decision: adopt-as-is
+  - id: "§p1-Z2"
+    cluster: Z
+    title: Generic name Property 1
+    observation: Two components use Property 1
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z3"
+    cluster: Z
+    title: Frame-named residue
+    observation: Frame 64 detected
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z4"
+    cluster: Z
+    title: Page-ratio
+    observation: ratio = 2.1
+    source_phase: 1
+    user_decision: adopt-as-is
+  - id: "§p1-Z5"
+    cluster: Z
+    title: Trailing whitespace
+    observation: 3 token names with trailing spaces
+    source_phase: 1
+    user_decision: drop
+summary:
+  total_findings: 5
+  by_cluster:
+    A: 0
+    B: 0
+    C: 0
+    D: 0
+    E: 0
+    Y: 0
+    Z: 5
+  by_decision:
+    pending: 0
+    adopt-as-is: 2
+    adopt-DTCG: 0
+    adopt-Figma: 0
+    adopt-Components: 0
+    accept-as-divergence: 0
+    drop: 3
+    block: 0
+  ship_blockers: []

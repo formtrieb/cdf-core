@@ -1,0 +1,133 @@
+schema_version: findings-v1
+ds_name: blockers
+generated_at: "2026-04-23T20:00:00Z"
+generated_by:
+  skill_version: scope-A-test
+  source_phase_yamls:
+    - phase-1-output.yaml
+    - phase-2-output.yaml
+findings:
+  - id: "§p2-A"
+    cluster: A
+    title: Token-layer architecture decision
+    observation: Two grammars co-exist on the same prefix
+    sot_recommendation: needs DS team alignment
+    source_phase: 2
+    user_decision: block
+  - id: "§p2-B"
+    cluster: C
+    title: Selection modeling inconsistency
+    observation: Checkbox 3-variant vs Radio 2-bool
+    sot_recommendation: tristate selected+indeterminate booleans
+    source_phase: 2
+    user_decision: block
+  - id: "§p1-Z1"
+    cluster: Z
+    title: Z1
+    observation: housekeeping 1
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z2"
+    cluster: Z
+    title: Z2
+    observation: housekeeping 2
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z3"
+    cluster: Z
+    title: Z3
+    observation: housekeeping 3
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z4"
+    cluster: Z
+    title: Z4
+    observation: housekeeping 4
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z5"
+    cluster: Z
+    title: Z5
+    observation: housekeeping 5
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z6"
+    cluster: Z
+    title: Z6
+    observation: housekeeping 6
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z7"
+    cluster: Z
+    title: Z7
+    observation: housekeeping 7
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z8"
+    cluster: Z
+    title: Z8
+    observation: housekeeping 8
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z9"
+    cluster: Z
+    title: Z9
+    observation: housekeeping 9
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z10"
+    cluster: Z
+    title: Z10
+    observation: housekeeping 10
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z11"
+    cluster: Z
+    title: Z11
+    observation: housekeeping 11
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z12"
+    cluster: Z
+    title: Z12
+    observation: housekeeping 12
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z13"
+    cluster: Z
+    title: Z13
+    observation: housekeeping 13
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z14"
+    cluster: Z
+    title: Z14
+    observation: housekeeping 14
+    source_phase: 1
+    user_decision: drop
+  - id: "§p1-Z15"
+    cluster: Z
+    title: Z15
+    observation: housekeeping 15
+    source_phase: 1
+    user_decision: drop
+summary:
+  total_findings: 17
+  by_cluster:
+    A: 1
+    B: 0
+    C: 1
+    D: 0
+    E: 0
+    Y: 0
+    Z: 15
+  by_decision:
+    pending: 0
+    adopt-as-is: 0
+    adopt-DTCG: 0
+    adopt-Figma: 0
+    adopt-Components: 0
+    accept-as-divergence: 0
+    drop: 15
+    block: 2
+  ship_blockers: ["§p2-A", "§p2-B"]

@@ -1,0 +1,406 @@
+# Component Spec: Text Field
+# The foundational input control — establishes the base pattern that ComboBox,
+# Select, DatePicker, and other input-type components extend.
+# Supports a tags content mode for multi-select composition.
+
+name: TextField
+category: Inputs
+description: >
+  Single-line text input for collecting user data. Includes label, helper text,
+  and validation message as structural parts of the component. Supports optional
+  leading/trailing icons, clearable behavior, and prefix/suffix text decorations.
+  This is the canonical input control — ComboBox and other composite inputs
+  extend this spec by composing a TextField instance with their own additions
+  (overlays, chevrons, etc.). The inputGroup.* tokens are a shared token group
+  consumed by all input-type components (not a separate component).
+  TextField's tagsSlot anatomy enables multi-select patterns: when tags=true,
+  the content area shows Tag instances instead of value text, and the container
+  grows to accommodate wrapping tags.
+
+# ─── Theme Axes (CSS cascade context) ───────────────────────────────────────────
+# All three axes apply. Inputs are interactive controls with height, radius,
+# and color that respond to device, shape, and semantic context.
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*, color.text.*, shadow.*
+  device:
+    values: [Desktop, Tablet, Mobile]
+    data_attribute: data-device
+    affects: controls.height.*, controls.minTarget, spacing.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# ─── Properties (orthogonal axes) ───────────────────────────────────────────────
+# Configuration properties the consumer sets. Runtime states are modeled
+# separately below — they're not "props" in the traditional sense.
+
+properties:
+  size:
+    type: enum
+    values: [base, small]
+    default: base
+    description: >
+      Controls height via device-aware controls.height tokens.
+      Typography and icon size scale accordingly.
+
+  clearable:
+    type: boolean
+    default: false
+    description: >
+      When true and the input has a value, shows a clear button to reset
+      the field. Clear button replaces the trailing icon position when visible.
+
+  readonly:
+    type: boolean
+    default: false
+    description: >
+      The current value is visible but cannot be changed. Uses the inactive
+      token set across all elements (background, stroke, text, icon) — visually
+      distinct from both enabled (page background, interactive stroke) and
+      disabled (dimmed). Text remains legible at secondary contrast.
+
+  tags:
+    type: boolean
+    default: false
+    description: >
+      When true, the content area (tagsSlot) displays Tag component instances
+      instead of value text. The value text is hidden to prevent layout
+      conflicts. Container height switches to auto with min-height =
+      controls.height.{size}, growing as tags wrap to multiple lines.
+      Used by ComboBox (multiple=true) and other multi-select compositions.
+      Tags are slot content — the consumer controls the number of Tag
+      instances; the spec does not prescribe a fixed count.
+
+# ─── States ───────────────────────────────────────────────────────────────────────
+# Runtime states — NOT properties the consumer passes. They're states the
+# component enters based on interaction or platform validation. The spec
+# defines the visual axes, not the mechanism.
+
+states:
+  interaction:
+    values: [enabled, hover, focused, disabled]
+    runtime: true
+    description: >
+      Standard interaction states. Focused = active input receiving
+      keyboard input. Disabled prevents all interaction and reduces
+      visual prominence.
+    token_mapping:
+      focused: active
+
+  validation:
+    values: [none, error, success]
+    runtime: true
+    description: >
+      Visual treatment for validation feedback. How this state is set
+      varies by platform (Angular input binding, CSS class, HTML :invalid
+      pseudo-class). Token mapping uses .error/.success state values.
+
+# ─── Anatomy ────────────────────────────────────────────────────────────────────
+# The full component includes label + input container + helper/validation message.
+# The input container is the visual "box" — other input-type components (ComboBox,
+# TextArea) share this same outer structure via inputGroup.* tokens.
+
+anatomy:
+  wrapper:
+    element: box
+    description: >
+      Outermost vertical stack that holds label, container, and helperText.
+      Purely structural — no visual styling beyond spacing.
+
+  label:
+    element: label
+    description: >
+      Text label above the input. Associated with the input via for/id.
+      Content is consumer-provided. Required for accessibility — if visually
+      hidden, must still be present in the DOM.
+
+  container:
+    element: box
+    description: >
+      The visual input box. Handles background, stroke, radius, height.
+      Receives interaction and validation visual states.
+      Height: fixed to controls.height.{size} when tags=false; auto with
+      min-height = controls.height.{size} when tags=true (grows with content).
+
+  prefix:
+    element: text
+    description: >
+      Static text displayed before the input value inside the container.
+      Used for units, symbols, or domain context (e.g., "$", "https://").
+      Not editable, not part of the submitted value.
+    conditional: has prefix content
+
+  tagsSlot:
+    element: box
+    description: >
+      Unified content area inside the container. Contains either the input/value
+      text (tags=false) or Tag component instances (tags=true). Uses horizontal
+      wrap layout so tags flow to multiple lines when they exceed the available
+      width. The value text node lives inside the slot but is hidden when
+      tags=true to prevent layout conflicts. Slot content — the consumer
+      controls how many Tag instances are present.
+    children:
+      - tag (component: Tag, N instances, visible when tags=true)
+      - value/placeholder text (visible when tags=false)
+
+  input:
+    element: input
+    description: >
+      The native text input element. Handles typing, selection, and platform
+      input behaviors. HTML type attribute (text, password, email, number,
+      tel, url, search) is a platform concern — it doesn't change the
+      visual spec, only browser behavior. In code, the input element exists
+      alongside tags in multi-select mode (cursor after last tag). In Figma,
+      this cursor state is not representable — the tagsSlot shows tags only.
+
+  suffix:
+    element: text
+    description: >
+      Static text displayed after the input value inside the container.
+      Used for units or domain context (e.g., "kg", ".com", "%").
+      Not editable, not part of the submitted value.
+    conditional: has suffix content
+
+  leadingIcon:
+    component: Icon
+    description: >
+      Optional icon at the start of the input. Purely decorative or
+      contextual (e.g., search magnifier, calendar). Not interactive.
+    conditional: has leading icon
+    locked:
+      size:
+        base: small
+        small: xsmall
+      color: controlled  # Driven by interaction state via tokens
+
+  trailingIcon:
+    component: Icon
+    description: >
+      Optional icon at the end of the input. Purely decorative or contextual.
+      Hidden when clearButton is visible (clearable=true and hasValue).
+    conditional: has trailing icon && !(clearable && hasValue)
+    locked:
+      size:
+        base: small
+        small: xsmall
+      color: controlled
+
+  clearButton:
+    component: Icon
+    description: >
+      Clears the input value. Appears when clearable=true and a value
+      is present. Takes the trailing icon position.
+    conditional: clearable && hasValue
+    locked:
+      name: close
+      size:
+        base: small
+        small: xsmall
+      color: controlled
+
+  helperText:
+    element: text
+    description: >
+      Guidance text below the input. Shows helper message by default,
+      switches to validation message when validation state is active.
+      Content is consumer-provided (i18n).
+    conditional: has helper or validation content
+
+# ─── Token Mapping ──────────────────────────────────────────────────────────────
+# Input controls use secondary hierarchy tokens — outlined stroke on a page
+# background. Interactive states (enabled, hover, focused, disabled) all use
+# color.page as background — state differentiation is through stroke only.
+#
+# Readonly uses the inactive token set: background, stroke, text, and icon all
+# switch to their .inactive values. This gives a distinct "non-editable" look
+# that is still legible (text.inactive = text.secondary, not fully dimmed).
+#
+# Pattern: color.controls.secondary.{element}.{state}
+# Validation overrides: .error / .success replace the interaction state
+# for stroke and icon color.
+
+tokens:
+  wrapper:
+    size: hug
+    width: [min : "300px", default: "424px"]
+    gap-label: inputGroup.spacing.titleGap  # Space between label and container
+    gap-helper: inputGroup.spacing.helperGap  # Space between container and helperText
+
+  label:
+    color: color.text.primary
+    color--disabled: color.text.tertiary
+    typography:
+      base: Label.Base.default
+      small: Label.Small.default
+
+  container:
+    background: color.page  # Page background for interactive states
+    background--readonly: color.controls.secondary.background.inactive
+    border-color: color.controls.secondary.stroke.{interaction}
+    border-color--readonly: none  # No stroke in readonly
+    border-color--error: color.controls.secondary.stroke.error
+    border-color--success: color.controls.secondary.stroke.success
+    border-width: borderWidth.thin
+    border-radius: radius.sm
+    height: controls.height.{size}  # Fixed when tags=false
+    height--tags: auto  # Grows with tag content, min-height = controls.height.{size}
+    padding-inline: inputGroup.padding.horizontal
+    gap: inputGroup.iconGap  # Space between internal elements (icons, prefix, input, suffix)
+
+  tagsSlot:
+    layout: horizontal-wrap  # Tags wrap to next line when they exceed width
+    tag-gap: spacing.component.2x  # Horizontal gap between tags
+    row-gap: "4px"  # Vertical gap between wrapped tag rows
+
+  input:
+    color: color.controls.secondary.text.{interaction}
+    color--readonly: color.controls.secondary.text.inactive
+    color--placeholder: color.text.tertiary
+    typography:
+      base: Label.Base.default
+      small: Label.Small.default
+
+  prefix:
+    color: color.text.tertiary
+    typography:
+      base: Label.Base.default
+      small: Label.Small.default
+
+  suffix:
+    color: color.text.tertiary
+    typography:
+      base: Label.Base.default
+      small: Label.Small.default
+
+  leadingIcon:
+    color: color.controls.secondary.icon.{interaction}
+    color--readonly: color.controls.secondary.icon.inactive
+    size:
+      base: icon.size.small
+      small: icon.size.xsmall
+
+  trailingIcon:
+    color: color.controls.secondary.icon.{interaction}
+    color--readonly: color.controls.secondary.icon.inactive
+    size:
+      base: icon.size.small
+      small: icon.size.xsmall
+
+  clearButton:
+    color: color.controls.secondary.icon.{interaction}
+    size:
+      base: icon.size.small
+      small: icon.size.xsmall
+
+  helperText:
+    color: color.text.secondary
+    color--error: color.text.negative.primary
+    color--success: color.text.positive.primary
+    typography:
+      base: Label.Small.default
+      small: Label.Small.default
+
+  focus:
+    pattern: double-ring
+    applies_to: container
+
+# ─── Token Gaps ──────────────────────────────────────────────────────────────────
+# TextField uses the same secondary hierarchy tokens as ComboBox.
+# All needed tokens already exist from the ComboBox token expansion.
+
+token_gaps: []  # None — secondary hierarchy fully populated
+
+# ─── Accessibility ────────────────────────────────────────────────────────────────
+
+accessibility:
+  element: input  # Native <input> — inherits semantics from type attribute
+  focus-visible: true
+  keyboard:
+    Tab: Move focus to/from the input field.
+    Escape: >
+      Clear the input text when clearable=true. Platform may also use
+      Escape to revert to previous value (undo last change).
+  aria:
+    - "The label element uses for/id to associate with the input"
+    - "aria-invalid: true — when validation=error"
+    - "aria-disabled: true — when interaction=disabled (prefer over HTML disabled to keep focusability)"
+    - "aria-readonly: true — when readonly=true"
+    - "aria-describedby: [helper-text-id] — points to the helperText element"
+    - "aria-required: true — when the field is required (consumer-set)"
+    - "Clear button: aria-label='Clear' (or localized equivalent) since it has no visible text"
+  min-target-size: controls.minTarget
+  contrast: >
+    Text tokens are pre-validated for 4.5:1 contrast ratio. Prefix/suffix
+    use tertiary text color — validated against container background.
+
+# ─── References ──────────────────────────────────────────────────────────────────
+
+references:
+  - name: WAI-ARIA APG — No specific pattern (native input)
+    url: https://www.w3.org/WAI/ARIA/apg/
+    use: >
+      Text inputs use native <input> semantics — no ARIA pattern needed.
+      Focus on proper labeling and error association via aria-describedby.
+  - name: PrimeNG InputText
+    url: https://primeng.org/inputtext
+    use: >
+      Angular implementation reference. Covers sizes, filled/outlined variants,
+      fluid behavior, and invalid state. Lightweight — most behavior comes
+      from the native input element.
+  - name: MDN — Input element
+    url: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+    use: >
+      Canonical reference for HTML input types, attributes, and built-in
+      validation. The type attribute drives browser behavior (keyboard layout,
+      validation rules) without changing the visual spec.
+
+# ─── Variants Matrix (for Figma generation) ──────────────────────────────────────
+# Device is NOT a variant axis — device-aware tokens (controls.height, spacing,
+# fontSizes) use Figma variable modes, so device switching is automatic.
+# Icons and prefix/suffix are Figma component properties (boolean toggles),
+# not variant axes — avoids exponential explosion.
+
+figma:
+  component_set_name: TextField
+  variant_properties:
+    size: [base, small]
+    interaction: [enabled, hover, disabled, readonly]  # No focused — focus ring is CSS-only
+    validation: [none, error, success]
+    hasValue: [false, true]  # Drives placeholder vs value display, clear button visibility
+  component_properties:
+    label: text           # Text above the input
+    placeholder: text     # Shown when hasValue=false
+    value: text           # Shown when hasValue=true (hidden when tags=true)
+    helperText: text
+    leadingIcon: boolean  # Toggle, not a variant axis
+    trailingIcon: boolean  # Toggle, not a variant axis
+    clearable: boolean  # Toggle, not a variant axis
+    prefix: boolean  # Toggle, not a variant axis
+    suffix: boolean  # Toggle, not a variant axis
+    tags: boolean  # Toggle tagsSlot visibility — shows Tag instances, hides value text
+  excluded_combinations:
+    - { validation: success, hasValue: false }  # Success makes no sense without a value
+    - { interaction: readonly, validation: [error, success] }  # Readonly has nothing to validate
+  total_variants: 34  # 48 base − 8 success-empty − 6 readonly-validation
+  layout:
+    columns: hasValue
+    rows: [interaction, validation]
+    groups: size
+    display_labels:
+      hasValue:
+        false: Empty
+        true: With Value
+  notes: >
+    Icons, clearable, prefix, suffix, and tags are modeled as Figma component
+    properties (boolean toggles) rather than variant axes. This keeps the variant
+    count manageable while still allowing design review of all combinations.
+    The tags property enables multi-select patterns via composition — ComboBox
+    nests a TextField instance and toggles tags=true for multiple selection mode.
+    When tags=true, the tagsSlot shows Tag instances and the value text is hidden.
+    Tag instances are slot content (N-th pattern) — the designer adds/removes
+    them freely; no fixed count is prescribed.

@@ -1,0 +1,3 @@
+name: NotAProfile
+version: "1.0.0"
+# No cdf_version / dtcg_version / vocabularies — just a yaml file, not a profile

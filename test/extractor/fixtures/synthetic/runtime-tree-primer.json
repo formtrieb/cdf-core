@@ -1,0 +1,77 @@
+{
+  "_synthetic": "Hand-crafted Plugin-API tree mirroring a Primer-like DS slice. Replaces a recorded figma_execute output (R4 in Session C plan: figma-console MCP not loaded at recording time). Shape mirrors what `await figma.loadAllPagesAsync(); figma.root.children.map(serialize)` returns.",
+  "_paired_rest_fixture": "runtime-tree-primer.rest.json — same logical tree in REST shape for source-parity.test.ts.",
+  "fileName": "fixture-runtime-primer",
+  "selectionPath": null,
+  "pages": [
+    {
+      "id": "0:2",
+      "name": "Controls",
+      "type": "PAGE",
+      "children": [
+        {
+          "id": "10:1",
+          "type": "COMPONENT_SET",
+          "name": "Button",
+          "description": "Primary interactive control. Use for triggering actions.",
+          "children": [
+            { "id": "10:2", "type": "COMPONENT", "name": "Variant=primary, State=rest" },
+            { "id": "10:3", "type": "COMPONENT", "name": "Variant=primary, State=hover" },
+            { "id": "10:4", "type": "COMPONENT", "name": "Variant=secondary, State=rest" }
+          ],
+          "componentPropertyDefinitions": {
+            "Variant": { "type": "VARIANT", "variantOptions": ["primary", "secondary"] },
+            "State": { "type": "VARIANT", "variantOptions": ["rest", "hover"] }
+          }
+        },
+        {
+          "id": "10:5",
+          "type": "COMPONENT_SET",
+          "name": "TextField",
+          "children": [
+            { "id": "10:6", "type": "COMPONENT", "name": "State=rest" },
+            { "id": "10:7", "type": "COMPONENT", "name": "State=focus" }
+          ],
+          "componentPropertyDefinitions": {
+            "State": { "type": "VARIANT", "variantOptions": ["rest", "focus"] }
+          }
+        },
+        {
+          "id": "10:8",
+          "type": "COMPONENT",
+          "name": "Divider"
+        }
+      ]
+    },
+    {
+      "id": "0:3",
+      "name": "Display",
+      "type": "PAGE",
+      "children": [
+        {
+          "id": "20:1",
+          "type": "COMPONENT_SET",
+          "name": "Badge",
+          "description": "Status indicator. Sits next to text.",
+          "children": [
+            { "id": "20:2", "type": "COMPONENT", "name": "Tone=info" }
+          ],
+          "componentPropertyDefinitions": {
+            "Tone": { "type": "VARIANT", "variantOptions": ["info"] }
+          }
+        },
+        {
+          "id": "20:3",
+          "type": "COMPONENT",
+          "name": "icon-search"
+        },
+        {
+          "id": "20:4",
+          "type": "FRAME",
+          "name": "_doc-button-usage",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

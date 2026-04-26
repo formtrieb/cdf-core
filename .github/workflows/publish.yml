@@ -1,0 +1,46 @@
+name: Publish to npm
+
+# Triggered by pushing a `v*` tag (e.g. `v1.0.0`). Publishes via Trusted
+# Publishing (OIDC) — no NPM_TOKEN secret is required. The corresponding
+# trusted publisher must be configured on npmjs.com pointing at this
+# repository's `publish.yml` workflow.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Use latest npm (OIDC support)
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test --run
+
+      - name: Publish to npm with provenance
+        run: npm publish --provenance --access public

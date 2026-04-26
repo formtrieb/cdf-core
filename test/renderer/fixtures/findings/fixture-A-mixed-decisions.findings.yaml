@@ -1,0 +1,66 @@
+schema_version: findings-v1
+ds_name: testfix
+generated_at: "2026-04-23T20:00:00Z"
+generated_by:
+  skill_version: scope-A-test
+  source_phase_yamls:
+    - phase-1-output.yaml
+    - phase-2-output.yaml
+    - phase-3-output.yaml
+findings:
+  - id: "§p1-A"
+    cluster: E
+    title: Description gap
+    observation: 1 of 192 sets carry descriptions
+    sot_recommendation: Document via doc-frames
+    source_phase: 1
+    user_decision: adopt-as-is
+  - id: "§p2-A"
+    cluster: A
+    title: Intent/emphasis folding
+    observation: hierarchy folds two axes
+    discrepancy: emphasis vs intent in one vocab
+    sot_recommendation: Decompose into hierarchy + intent
+    source_phase: 2
+    user_decision: adopt-DTCG
+  - id: "§p3-A"
+    cluster: A
+    title: Token-layer drift
+    observation: DTCG +3 vs Figma in color.controls
+    sot_recommendation: Adopt DTCG
+    source_phase: 3
+    user_decision: adopt-DTCG
+  - id: "§p4-A"
+    cluster: B
+    title: Brand-B sparsity
+    observation: Brand-B has 384 leaves vs 387 in Light/Dark
+    sot_recommendation: Document divergence
+    source_phase: 4
+    user_decision: accept-as-divergence
+  - id: "§p5-A"
+    cluster: D
+    title: Focus strategy
+    observation: Utility-component focus pattern
+    sot_recommendation: Document as Profile feature
+    source_phase: 5
+    user_decision: drop
+summary:
+  total_findings: 5
+  by_cluster:
+    A: 2
+    B: 1
+    C: 0
+    D: 1
+    E: 1
+    Y: 0
+    Z: 0
+  by_decision:
+    pending: 0
+    adopt-as-is: 1
+    adopt-DTCG: 2
+    adopt-Figma: 0
+    adopt-Components: 0
+    accept-as-divergence: 1
+    drop: 1
+    block: 0
+  ship_blockers: []

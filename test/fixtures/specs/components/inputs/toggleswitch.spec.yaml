@@ -1,0 +1,276 @@
+# Component Spec: Toggle Switch
+# Binary on/off control with sliding knob animation. Visually communicates
+# checked/unchecked state through track color shift and knob position.
+# Used for settings, preferences, and immediate-effect toggles.
+
+name: ToggleSwitch
+category: Inputs
+description: >
+  Binary toggle control that lets users switch a setting on or off. The knob
+  slides between positions with a smooth transition, and the track fills with
+  the primary accent color when checked. Provides an icon inside the knob
+  (check when on, close when off) for redundant visual feedback beyond color.
+  Supports an optional text label positioned left or right. Used for settings
+  pages, preference toggles, and anywhere an immediate on/off switch is needed.
+  For multi-option selection use SelectionTag, for momentary actions use Button.
+
+# --- Theme Axes (CSS cascade context) --------------------------------------------------------
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*, color.page
+  device:
+    values: [Desktop, Mobile]
+    data_attribute: data-device
+    affects: spacing.component.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# --- Properties (consumer-configurable inputs) ------------------------------------------------
+
+properties:
+  labelPosition:
+    type: enum
+    values: [left, right]
+    default: left
+    description: >
+      Controls whether the text label appears before or after the toggle track.
+      Left is the default and matches natural reading order for LTR layouts.
+
+  showLabel:
+    type: boolean
+    default: true
+    description: >
+      When true, displays a text label alongside the toggle track.
+      When false, the label is visually hidden but must still be provided
+      via aria-label for accessibility.
+
+  showIcon:
+    type: boolean
+    default: true
+    description: >
+      When true, displays an icon inside the knob — a checkmark when checked,
+      a close/x icon when unchecked. Provides redundant non-color indication
+      of state. Recommended for accessibility.
+
+# --- States -----------------------------------------------------------------------------------
+
+states:
+  interaction:
+    values: [enabled, hover, disabled]
+    runtime: true
+    description: >
+      Standard interaction states. The entire component (track + knob) is the
+      interactive target. Disabled prevents toggling and reduces visual prominence.
+
+  checked:
+    values: [false, true]
+    runtime: true
+    description: >
+      Whether the toggle is currently on. Drives the visual appearance: unchecked
+      uses inactive background token (neutral track), checked uses enabled/hover
+      background tokens (accent track). The knob slides to the opposite end and
+      the icon swaps between check and close.
+
+# --- Anatomy ----------------------------------------------------------------------------------
+# Container wraps label + track. Track contains the sliding knob. Knob contains an icon.
+
+anatomy:
+  container:
+    element: label
+    description: >
+      Root wrapper using horizontal flex layout. Contains the text label and
+      toggle track. The labelPosition property controls element order.
+      Gap between label and track uses spacing.component.4x.
+
+  label:
+    element: span
+    description: >
+      Text label for the toggle. Consumer-provided content. Remains constant
+      across checked/unchecked states to avoid screen reader confusion.
+      Uses label/large typography. Hidden visually when showLabel=false
+      but still present in the DOM for accessibility.
+
+  track:
+    element: span
+    description: >
+      Pill-shaped track that provides the colored background behind the knob.
+      Fixed width (40px desktop), full border-radius. Background color shifts
+      between inactive (unchecked) and accent (checked). The knob alignment
+      flips between start (unchecked) and end (checked) to create the slide effect.
+
+  knob:
+    element: span
+    description: >
+      Circular sliding indicator inside the track. Fixed size (20px desktop),
+      full border-radius. Uses page background color for contrast against
+      the track. Contains the state icon. Clips overflow.
+
+  icon:
+    component: Icon
+    description: >
+      State indicator icon inside the knob. Shows "check" when checked=true,
+      "close" when checked=false. Uses small icon size. Color switches between
+      active (checked) and inactive (unchecked) icon tokens.
+    conditional: showIcon
+    locked:
+      name:
+        checked: check
+        unchecked: close
+      size: small
+      color: controlled
+
+# --- Token Mapping ----------------------------------------------------------------------------
+# ToggleSwitch uses the primary hierarchy throughout. The checked/unchecked distinction
+# is expressed through different STATE segments within color.controls.primary.*:
+#
+#   unchecked + default   -> track = inactive, icon = inactive
+#   unchecked + hover     -> track = inactive, icon = inactive (no track color change)
+#   unchecked + disabled  -> track = disabled, icon = disabled
+#   checked + default     -> track = enabled,  icon = active
+#   checked + hover       -> track = hover,    icon = active
+#   checked + disabled    -> track = disabled,  icon = disabled
+
+tokens:
+  container:
+    gap: spacing.component.4x
+
+  label:
+    color: color.controls.primary.text.{interaction}
+    typography: Label.Large.default
+
+  track:
+    # Checked states use accent-colored background
+    background--checked: color.controls.primary.background.{interaction}
+    # Unchecked enabled/hover use neutral inactive background
+    background--unchecked--enabled: color.controls.primary.background.inactive
+    background--unchecked--hover: color.controls.primary.background.inactive
+    # Disabled is the same regardless of checked state
+    background--unchecked--disabled: color.controls.primary.background.disabled
+    border-radius: radius.full
+    padding: spacing.component.1x  # 2px internal padding around knob
+
+  knob:
+    background: color.page
+    border-radius: radius.full
+
+  icon:
+    color--checked: color.controls.primary.icon.active
+    color--unchecked: color.controls.primary.icon.inactive
+    color--disabled: color.controls.primary.icon.disabled
+    size: icon.size.small
+
+  focus:
+    pattern: double-ring
+    applies_to: track
+
+# --- Events -----------------------------------------------------------------------------------
+
+events:
+  changed:
+    type: boolean
+    description: >
+      Emitted when the user toggles the switch. Carries the new checked value
+      (true = on, false = off). Fires on click and keyboard activation
+      (Space/Enter). Does not fire when disabled.
+
+# --- CSS Architecture -------------------------------------------------------------------------
+
+css_architecture:
+  selector: .ft-toggle-switch
+  class_pattern: "ft-toggle-switch--{modifier}__{child}"
+  prefix: ft
+  methodology: BEM
+  private_custom_properties:
+    - --_track-bg      # Resolved track background color
+    - --_icon-color    # Resolved icon color
+    - --_knob-offset   # Knob translateX for slide animation
+
+# --- Token Gaps -------------------------------------------------------------------------------
+
+token_gaps:
+  - "color.controls.primary.text.* — many states are placeholder (#f305b7)"
+  - "color.controls.primary.icon.* — most states are placeholder (#f305b7)"
+  - "color.controls.primary.stroke.* — all states are placeholder (#f305b7)"
+
+# --- Accessibility ----------------------------------------------------------------------------
+
+accessibility:
+  element: switch  # role="switch" on the track, or input[type=checkbox][role=switch]
+  focus-visible: true
+  keyboard:
+    Space: Toggle checked state.
+    Enter: Toggle checked state.
+  aria:
+    - "role='switch' — use the switch role, not checkbox, for binary on/off toggles"
+    - "aria-checked: true|false — reflects the checked state (required for role=switch)"
+    - "aria-disabled: true — when interaction=disabled (prefer over HTML disabled to keep focusability)"
+    - "aria-labelledby: point to the label element. When showLabel=false, use aria-label instead"
+    - "The label element should be a <label> wrapping both text and track, or use for= to associate"
+  min-target-size: 24px  # Knob is 20px but track is 24px tall — meets minimum
+  contrast: >
+    Track uses accent background tokens against page background — pre-validated
+    for 3:1 contrast (non-text UI element). Icon inside knob uses icon tokens
+    against page background. Label uses text tokens against page background,
+    validated for 4.5:1 contrast. Both checked and unchecked states must be
+    clearly distinguishable — the icon provides redundant non-color indication.
+
+# --- Behavior --------------------------------------------------------------------------------
+
+behavior:
+  transitions:
+    - property: background-color
+      element: track
+      duration: 120ms
+      easing: ease-in-out
+    - property: transform  # knob slide via translateX or justify-content flip
+      element: knob
+      duration: 120ms
+      easing: ease-in-out
+
+# --- References -------------------------------------------------------------------------------
+
+references:
+  - name: WAI-ARIA APG -- Switch Pattern
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/switch/
+    use: >
+      Canonical switch pattern. Uses role=switch with aria-checked (not
+      aria-pressed). Keyboard activation via Space (and optionally Enter).
+  - name: WCAG 1.4.11 Non-text Contrast
+    url: https://www.w3.org/WAI/WCAG21/Understanding/non-text-contrast.html
+    use: >
+      The toggle track is a non-text UI element requiring 3:1 contrast ratio
+      against surrounding background in both checked and unchecked states.
+
+# --- Figma ------------------------------------------------------------------------------------
+
+figma:
+  component_set_name: Toggle Switch
+  variant_properties:
+    type: [selected, unselected]
+    labelPosition: [left, right]
+    state: [enabled, hover, disabled]
+    device: [desktop, mobile]
+  component_properties:
+    Label: text
+    showLabel: boolean
+    showIcon: boolean
+  variant_to_cdf_mapping:
+    type:
+      selected: "checked: true"
+      unselected: "checked: false"
+    state:
+      enabled: "interaction: enabled"
+      hover: "interaction: hover"
+      disabled: "interaction: disabled"
+  excluded_combinations: []
+  total_variants: 24  # 2 type x 2 labelPosition x 3 state x 2 device
+  notes: >
+    Device is a Figma variant axis but maps to the device theme axis in CDF —
+    handled via data-device attribute and CSS cascade, not a component property.
+    The "type" variant maps to the "checked" runtime state. "state" maps to
+    "interaction" with enabled→default rename.

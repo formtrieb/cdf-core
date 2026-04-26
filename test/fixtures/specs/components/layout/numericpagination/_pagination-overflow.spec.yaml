@@ -1,0 +1,175 @@
+# Component Spec: _PaginationOverflow
+# Private sub-component of NumericPagination.
+# Represents an overflow indicator ("...") that signals hidden pages.
+# Clicking opens a popover or dropdown to jump to a specific page
+# within the hidden range. Uses the secondary controls token pattern.
+
+name: PaginationOverflow
+category: Layout
+description: >
+  An overflow indicator button within the NumericPagination component.
+  Displays an ellipsis ("...") inside a circular hit area. When clicked,
+  opens a companion popover or dropdown allowing the user to jump to
+  a specific page in the hidden range. Uses the secondary controls token
+  pattern for state-driven color changes. The open state indicates the
+  companion element is currently visible.
+
+# --- Theme Axes (CSS cascade context) --------------------------------------------------------
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*
+  device:
+    values: [Desktop, Tablet, Mobile]
+    data_attribute: data-device
+    affects: dimension.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# --- States -----------------------------------------------------------------------------------
+
+states:
+  interaction:
+    values: [enabled, hover, pressed, open, disabled]
+    runtime: true
+    token_mapping:
+      open: enabled
+    description: >
+      Standard interaction states plus open. Open indicates the companion
+      popover/dropdown is visible — renders a filled background matching
+      the active page-item style. Text color in open state reuses the
+      enabled token. Disabled is applied when overflow navigation is
+      not available.
+
+# --- Anatomy ----------------------------------------------------------------------------------
+
+anatomy:
+  container:
+    element: button
+    description: >
+      Circular button element. Fixed size (dimension.8x square) with
+      full border-radius. Background appears on hover, pressed, and
+      open states. Triggers a popover on click.
+
+  label:
+    element: span
+    description: >
+      The ellipsis text ("..."). Uses label/base typography with regular
+      weight. Color shifts per interaction state — enabled text uses
+      secondary text token, hover/pressed use text-on-color tokens.
+
+# --- Events -----------------------------------------------------------------------------------
+
+events:
+  toggled:
+    type: boolean
+    description: >
+      Emitted when the overflow button is clicked or activated via keyboard.
+      Carries the new open state (true = popover opening, false = closing).
+      The parent NumericPagination component handles popover display.
+
+# --- Tokens -----------------------------------------------------------------------------------
+
+tokens:
+  container:
+    width: dimension.8x
+    height: dimension.8x
+    border-radius: radius.full
+    background--hover: color.controls.secondary.background.hover
+    background--pressed: color.controls.secondary.background.pressed
+    background--open: color.controls.secondary.background.enabled
+
+  label:
+    color: "color.controls.secondary.text.{interaction}"
+    color--hover: color.controls.secondary.text-on-color.hover
+    color--pressed: color.controls.secondary.text-on-color.pressed
+    color--disabled: color.controls.secondary.text.disabled
+    font-size: fontSizes.label.base
+    font-weight: fontWeights.regular
+    font-family: fontFamilies.baseFamily
+    line-height: lineHeights.label.base
+
+  focus:
+    pattern: double-ring
+    applies_to: container
+
+# --- Token Gaps -------------------------------------------------------------------------------
+
+token_gaps:
+  - "color.controls.secondary.text.pressed — placeholder (#f305b7)"
+  - "color.controls.secondary.text.disabled — placeholder (#f305b7)"
+  - "color.controls.secondary.text-on-color.hover — placeholder (#f305b7)"
+  - "color.controls.secondary.text-on-color.pressed — placeholder (#f305b7)"
+
+# --- CSS Architecture -------------------------------------------------------------------------
+
+css_architecture:
+  selector: .ft-pagination-overflow
+  private_custom_properties:
+    - --_bg       # Resolved background per interaction state
+    - --_text     # Resolved text color per interaction state
+
+# --- Accessibility ----------------------------------------------------------------------------
+
+accessibility:
+  element: button
+  focus-visible: true
+  keyboard:
+    Enter: Toggle popover/dropdown for page jump.
+    Space: Toggle popover/dropdown for page jump.
+    Escape: Close popover if open.
+  aria:
+    - "aria-expanded='true|false' to communicate popover visibility"
+    - "aria-haspopup='true' to indicate companion popup"
+    - "aria-disabled='true' when interaction=disabled"
+    - "aria-label='Show more pages' for screen reader context"
+  min-target-size: dimension.8x
+  contrast: >
+    Enabled text uses color.controls.secondary.text.enabled against page background —
+    validated for 4.5:1. Hover/pressed text uses text-on-color tokens against filled
+    background — validated for 4.5:1.
+
+# --- Behavior --------------------------------------------------------------------------------
+
+behavior:
+  transitions:
+    - property: background-color
+      element: container
+      duration: 120ms
+      easing: ease-in-out
+    - property: color
+      element: label
+      duration: 120ms
+      easing: ease-in-out
+  popover:
+    trigger: click
+    position: bottom
+    close_on: [Escape, click-outside]
+    description: >
+      Opens a companion element (popover, dropdown, or listbox) that
+      allows jumping to a specific page in the hidden range. The exact
+      companion component is implementation-defined.
+
+# --- Figma ------------------------------------------------------------------------------------
+
+figma:
+  component_set_name: "_numeric-pagination-part/<overflow>"
+  component_set_id: "413:5203"
+  variant_properties:
+    state: [enabled, hover, pressed, open, disabled]
+  variant_to_cdf_mapping:
+    state:
+      enabled: "interaction: enabled"
+      hover: "interaction: hover"
+      pressed: "interaction: pressed"
+      open: "interaction: open"
+      disabled: "interaction: disabled"
+  total_variants: 5
+  notes: >
+    Has open/expanded state but no explicit OPEN_OVERLAY reaction in the
+    Figma prototype. The companion popover/dropdown is likely defined in
+    a separate prototype flow or is implementation-defined.

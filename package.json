@@ -1,0 +1,43 @@
+{
+  "name": "@formtrieb/cdf-core",
+  "version": "1.0.1",
+  "description": "Core library for the Component Description Format (CDF) — parsing, validation, profile inference, token-tree, and analysis primitives. Pure functions, framework-agnostic.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/formtrieb/cdf-core.git"
+  },
+  "homepage": "https://github.com/formtrieb/cdf",
+  "keywords": [
+    "cdf",
+    "component-description-format",
+    "design-system",
+    "design-tokens",
+    "dtcg",
+    "profile",
+    "validation"
+  ],
+  "scripts": {
+    "build": "rm -rf dist tsconfig.tsbuildinfo && tsc",
+    "test": "vitest",
+    "prepublishOnly": "npm run build && vitest --run"
+  },
+  "dependencies": {
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
+}

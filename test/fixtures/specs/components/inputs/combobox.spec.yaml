@@ -1,0 +1,295 @@
+# Component Spec: Combo Box
+# Composes TextField — nests a TextField instance and adds overlay + chevron.
+# All visual states (interaction, validation, size, hasValue) are inherited
+# from the nested TextField. Multi-select uses TextField's tags=true mode.
+
+name: ComboBox
+category: Inputs
+extends: TextField  # Composition, not duplication — nests a TextField instance
+description: >
+  Composite input that combines a text field with a filterable dropdown listbox.
+  Users can type to filter options, browse the full list, or both. Supports
+  single and multiple selection.
+  Architecture: ComboBox is a composition wrapper around a TextField instance.
+  All visual states (interaction, validation, size, hasValue, tags) are
+  controlled by switching the nested TextField's variants and properties.
+  ComboBox adds only the overlay (listbox) and replaces trailingIcon with
+  a chevron. Multi-select mode uses TextField's built-in tags=true property
+  to display Tag instances in the tagsSlot. This eliminates variant
+  duplication — TextField owns the 34 state variants, ComboBox adds only
+  the open/closed overlay axis.
+
+# ─── Theme Axes ──────────────────────────────────────────────────────────────────
+# Inherited from TextField — semantic, device, shape. No overrides.
+
+# ─── Properties (additions to TextField) ─────────────────────────────────────────
+# Inherits: size, clearable, readonly from TextField.
+
+properties:
+  multiple:
+    type: boolean
+    default: false
+    description: >
+      When true, multiple options can be selected. Selected values appear
+      as Tags inside the TextField's tagsSlot (tags=true on the nested
+      TextField instance). In code, the input cursor appears after the
+      last tag for inline filtering. In Figma, the cursor is not
+      representable — the tagsSlot shows tags only.
+
+# ─── States (additions to TextField) ─────────────────────────────────────────────
+# Inherits: interaction (enabled, hover, focused, disabled), validation (none, error, success).
+
+states:
+  open:
+    values: [closed, open]
+    runtime: true
+    description: >
+      Whether the listbox overlay is visible. Orthogonal to interaction
+      state — the input can be focused with the listbox closed (user
+      hasn't typed enough) or open.
+
+# ─── Anatomy (additions to TextField) ────────────────────────────────────────────
+# Inherits everything from TextField via composition (nested instance).
+# Overrides: trailingIcon is swapped to a chevron icon on the TextField instance.
+# Tags: handled by TextField's built-in tags=true property and tagsSlot.
+# Adds: listbox overlay with its own sub-components.
+
+anatomy:
+  # ── Composition root ──
+
+  textField:
+    component: TextField
+    description: >
+      Nested TextField instance — owns all visual states. ComboBox sets
+      the appropriate variant (size, interaction, validation, hasValue)
+      and toggles tags=true for multiple selection mode. The trailingIcon
+      is swapped to a chevron icon on the instance.
+
+  # ── Overrides on nested TextField ──
+
+  chevron:
+    component: Icon
+    description: >
+      Dropdown toggle indicator, set via instance swap on the TextField's
+      trailingIcon slot. Rotates when listbox is open.
+      Clicking toggles the listbox.
+    locked:
+      name: chevron_down  # Fixed icon
+      size:
+        base: small
+        small: xsmall
+      color: controlled  # Driven by interaction state via tokens
+
+  # ── Tags (delegated to TextField) ──
+  # When multiple=true, ComboBox sets tags=true on the nested TextField.
+  # Tags are slot content in the TextField's tagsSlot — the consumer
+  # controls the number of Tag instances. Tag component tokens are
+  # owned by the Tag spec, not ComboBox.
+
+  # ── Overlay additions ──
+
+  listbox:
+    element: box
+    description: >
+      Dropdown panel containing the options list. A standard element
+      (role="listbox") that floats above content. Uses shared overlay.*
+      tokens for surface treatment (elevation, z-index, radius) — the same
+      tokens other dropdown/popover patterns consume.
+    conditional: open
+
+  option:
+    element: box
+    description: >
+      Structural wrapper for each option in the list. Handles hover,
+      focus, and selected visual states. Content is consumer-templated —
+      the component provides the container, the consumer decides what
+      goes inside (text, icon + text, custom layout, etc.).
+
+  optionGroup:
+    element: box
+    description: >
+      Optional group header for categorized options. Content is
+      consumer-templated.
+    conditional: grouped data
+
+  emptyMessage:
+    element: text
+    description: >
+      Shown when filtering produces no matching options.
+      Text content is consumer-provided (i18n).
+    conditional: open && noResults
+
+  spinner:
+    component: LoadingSpinner
+    description: >
+      Loading indicator shown while options are being fetched
+      asynchronously. Replaces the options list content.
+    conditional: loading
+    locked:
+      size:
+        base: small
+        small: xsmall
+      color: controlled
+
+# ─── Token Mapping (additions/overrides to TextField) ────────────────────────────
+# Inherits all TextField tokens: wrapper, label, container, input, prefix, suffix,
+# leadingIcon, clearButton, helperText, focus.
+# Container height override for multiple mode. Adds chevron, listbox, option, tag.
+
+tokens:
+  # ── Inherited from TextField ──
+  # Container height--tags (auto + min-height) is owned by TextField spec.
+  # tagsSlot tokens (tag-gap, row-gap) are owned by TextField spec.
+  # Tag component tokens are owned by Tag spec.
+
+  # ── Overrides ──
+  # None — all visual tokens are inherited from the nested TextField instance.
+
+  # ── Additions (overlay only) ──
+
+  chevron:
+    # Uses TextField's trailingIcon token slot via instance swap.
+    color: color.controls.secondary.icon.{interaction}
+    color--readonly: color.controls.secondary.icon.inactive
+    size:
+      base: icon.size.small
+      small: icon.size.xsmall
+
+  listbox:
+    background: overlay.background
+    border-color: overlay.stroke
+    border-width: borderWidth.thin
+    border-radius: overlay.radius
+    box-shadow: overlay.shadow
+    z-index: zIndex.overlay
+    max-height: scrollable  # Implementation decides pixel value or viewport-relative
+
+  option:
+    background--hover: color.controls.secondary.background.hover
+    background--selected: color.controls.secondary.background.active
+    color: color.text.primary
+    color--disabled: color.controls.secondary.text.disabled
+    padding-block: spacing.component.3x
+    padding-inline: inputGroup.padding.horizontal
+    min-height: controls.minTarget  # Touch-friendly option height
+
+  # tag tokens removed — delegated to TextField.tagsSlot and Tag spec
+
+# ─── Token Gaps ──────────────────────────────────────────────────────────────────
+# All previously identified gaps have been filled:
+# ✓ color.controls.*.{element}.success — added to all 7 hierarchies × 6 elements
+# ✓ color.controls.*.{element}.warning — added to all 7 hierarchies × 6 elements
+# ✓ overlay.* component tokens — created (background, stroke, shadow, radius)
+
+token_gaps: []  # None remaining
+
+# ─── Accessibility ────────────────────────────────────────────────────────────────
+# Extends TextField accessibility with combobox-specific ARIA and keyboard patterns.
+
+accessibility:
+  element: input  # Native <input> with combobox role
+  focus-visible: true
+  keyboard:
+    ArrowDown: >
+      Open listbox (if closed). Move focus to next option (if open).
+    ArrowUp: >
+      Move focus to previous option. If on first option, return focus
+      to input.
+    Enter: >
+      Select the focused option and close listbox (single mode).
+      Select/deselect the focused option (multiple mode, listbox stays open).
+    Escape: >
+      Close listbox without changing selection. If listbox already closed,
+      clear the input text.
+    Home: Move focus to first option (when listbox is open).
+    End: Move focus to last option (when listbox is open).
+    Tab: >
+      Accept current state and move focus to next focusable element.
+      Close listbox if open.
+    Backspace: >
+      In multiple mode with empty input, remove the last tag.
+    Typing: >
+      Filter options as user types. Debounce for async data sources.
+  aria:
+    - "role: combobox — on the input element"
+    - "aria-expanded: true|false — reflects listbox open state"
+    - "aria-haspopup: listbox"
+    - "aria-controls: [listbox-id] — points to the listbox element"
+    - "aria-activedescendant: [option-id] — tracks focused option for screen readers"
+    - "aria-autocomplete: list — indicates filtering behavior"
+    - "aria-invalid: true — when validation=error"
+    - "aria-disabled: true — when interaction=disabled (prefer over HTML disabled for focusability)"
+    - "aria-readonly: true — when readonly=true"
+    - "aria-multiselectable: true — on the listbox when multiple=true"
+    - "role: listbox — on the dropdown panel"
+    - "role: option — on each option, with aria-selected for selection state"
+    - "role: group + aria-label — on option groups"
+    - "aria-busy: true — when loading async options"
+    - "Live region announcing result count: '{n} results available' for screen readers"
+  min-target-size: controls.minTarget
+  contrast: >
+    Text tokens are pre-validated for 4.5:1 contrast ratio. Option hover/selected
+    backgrounds must maintain readable contrast with option text.
+
+# ─── References ──────────────────────────────────────────────────────────────────
+
+references:
+  - name: WAI-ARIA APG — Combobox Pattern
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
+    use: >
+      Canonical keyboard interaction and ARIA pattern. The editable combobox
+      with list autocomplete is the closest match to this component.
+  - name: WAI-ARIA APG — Listbox Pattern
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
+    use: >
+      Keyboard patterns for the dropdown listbox portion, especially
+      multi-select behavior.
+  - name: PrimeNG AutoComplete
+    url: https://primeng.org/autocomplete
+    use: >
+      Angular implementation reference. Covers single/multiple modes,
+      virtual scrolling, grouped options, keyboard navigation, and
+      Pass Through architecture.
+  - name: MDN — ARIA Combobox Role
+    url: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/combobox_role
+    use: Practical ARIA implementation guidance with examples.
+
+# ─── Variants Matrix (for Figma generation) ──────────────────────────────────────
+# Device is NOT a variant axis — device-aware tokens use Figma variable modes.
+# The listbox is a separate Figma component — it's an overlay that can't
+# be physically attached to the input in Figma's auto-layout model.
+
+figma:
+  component_set_name: ComboBox
+  architecture: composition  # Wraps TextField, not a standalone variant matrix
+  variant_properties:
+    open: [false, true]  # Only axis — shows/hides the listbox overlay
+  total_variants: 2
+  nested_components:
+    textField:
+      component: TextField  # Instance — designer switches its variants directly
+      overrides:
+        trailingIcon: chevron_down  # Instance swap to chevron icon
+      usage:
+        single_mode: tags=false, hasValue=true → shows value text
+        multi_mode: tags=true, hasValue=true → shows Tag instances in tagsSlot
+        empty: hasValue=false → shows placeholder
+        states: Switch size, interaction, validation on the nested TextField
+  notes: >
+    ComboBox has only 2 variants (open/closed). All visual complexity is
+    inherited from the nested TextField instance. The designer controls
+    appearance by switching the TextField's own variants and properties.
+    Multiple selection is achieved by toggling tags=true on the TextField.
+    This eliminates the 68-variant explosion of the previous approach.
+
+  sub_components:
+    - name: ComboBox.Listbox
+      variant_properties:
+        hasResults: [true, false]  # Options visible vs empty message
+        loading: [false, true]
+      total_variants: 3  # 2 hasResults + 1 loading
+
+    - name: ComboBox.Option
+      variant_properties:
+        interaction: [enabled, hover, focused, selected, disabled]
+      total_variants: 5

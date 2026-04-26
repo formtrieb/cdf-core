@@ -1,0 +1,289 @@
+# Component Spec: Button
+# Labeled action trigger. Always has visible text. For icon-only actions, see IconButton.
+# Each output target (Kirby, Angular, Figma) reads this spec and maps to its own idiom.
+
+name: Button
+category: Actions
+description: >
+  Labeled action trigger. Always has visible text — for icon-only actions, use
+  IconButton instead. Supports multiple hierarchy levels, destructive variant,
+  optional icon placement, and two sizes. Uses semantic control tokens directly —
+  no component-level token overrides needed.
+
+# ─── Theme Axes (CSS cascade context) ───────────────────────────────────────────
+# These are NOT component properties. They're controlled via data attributes on
+# ancestor HTML elements and cascade down via CSS custom properties.
+# Components consume tokens like var(--vt-controls-height-base) — the value
+# changes automatically based on the nearest data-* attribute in the DOM.
+#
+# Override at any DOM level:
+#   <body data-device="Desktop" data-semantic="Light" data-shape="Round">
+#     <aside data-device="Mobile">  ← everything inside gets mobile sizing
+#
+# Figma has no cascade, so these become explicit variant properties there.
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*, color.interaction.*, color.text.*, shadow.*
+  device:
+    values: [Desktop, Tablet, Mobile]
+    data_attribute: data-device
+    affects: controls.height.*, controls.minTarget, spacing.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# ─── Properties (orthogonal axes) ───────────────────────────────────────────────
+
+properties:
+  hierarchy:
+    type: enum
+    values: [brand, primary, secondary, tertiary]
+    default: primary
+    description: >
+      Visual emphasis level. Brand = CTA (uses brand color), Primary = default
+      high-emphasis, Secondary = outlined/subtle, Tertiary = text-only.
+
+  destructive:
+    type: boolean
+    default: false
+    description: >
+      Overrides hierarchy colors with negative/error tokens for dangerous actions
+      (delete, remove, cancel). Only applies to primary (filled red) and
+      tertiary (red text). Brand and secondary do not have destructive variants.
+    constraints:
+      - requires: { hierarchy: [primary, tertiary] }
+
+  size:
+    type: enum
+    values: [base, small]
+    default: base
+    description: >
+      Controls height via device-aware controls.height tokens.
+      Typography and icon size scale accordingly.
+
+  # Code vs Figma model for icons:
+  # In code, iconLeft/iconRight are two optional inputs. Setting both throws
+  # a runtime error. TypeScript can't model "at most one" at the type level.
+  # In Figma, this collapses to a single variant axis: icon=[none, left, right].
+  # The spec models the code reality; the figma section handles the mapping.
+
+  iconLeft:
+    type: IconName
+    optional: true
+    description: >
+      Icon displayed before the label text. Mutually exclusive with iconRight.
+      Size is derived from button size (base→small, small→xsmall).
+    mutual_exclusion: iconRight
+
+  iconRight:
+    type: IconName
+    optional: true
+    description: >
+      Icon displayed after the label text. Mutually exclusive with iconLeft.
+      Size is derived from button size (base→small, small→xsmall).
+    mutual_exclusion: iconLeft
+
+  noPadding:
+    type: boolean
+    default: false
+    description: >
+      Removes horizontal padding. Only valid when hierarchy = tertiary.
+      Used for inline text-button contexts where padding would break alignment.
+    constraints:
+      - requires: { hierarchy: tertiary }
+
+# ─── States ───────────────────────────────────────────────────────────────────────
+# Runtime states — NOT properties the consumer passes. Modeled as orthogonal axes
+# (see GLOSSARY.md "State Modeling"). Each axis is an independent concern.
+
+states:
+  interaction:
+    values: [enabled, hover, pressed, disabled]
+    runtime: true
+    description: >
+      Standard interaction states for pressable controls.
+
+  loading:
+    values: [false, true]
+    runtime: true
+    description: >
+      Whether the button is performing an async operation. Shows a loading
+      spinner replacing content and suppresses interaction. Orthogonal to
+      interaction state — the button is technically enabled but non-responsive.
+
+# ─── Anatomy ────────────────────────────────────────────────────────────────────
+# The structural parts that make up the component.
+# Parts can be primitive elements (box, text) or composed child components.
+
+anatomy:
+  container:
+    element: box
+    description: Outer interactive wrapper. Handles background, stroke, radius, height.
+
+  icon:
+    component: Icon
+    description: >
+      Optional icon before or after the label. Position determined by which
+      input is set (iconLeft or iconRight). Mutually exclusive — at most one.
+    conditional: iconLeft || iconRight
+    locked:
+      size:
+        base: small     # Icon.size when Button.size=base
+        small: xsmall   # Icon.size when Button.size=small
+      color: controlled  # Driven by Button hierarchy + state via currentColor
+
+  label:
+    element: text
+    description: >
+      Button label text. Always present — Button always has visible text.
+      For icon-only actions, use IconButton.
+
+  spinner:
+    component: LoadingSpinner
+    description: Loading spinner replacing content. Shown when loading=true.
+    conditional: loading
+    locked:
+      size:
+        base: small
+        small: xsmall
+      color: controlled  # Driven by Button hierarchy + state via tokens
+    exposed: {}  # Fully controlled by Button — no consumer configuration
+
+# ─── Token Mapping ──────────────────────────────────────────────────────────────
+# How anatomy parts connect to the token system.
+# Pattern: color.controls.{hierarchy}.{element}.{interaction}
+# When destructive=true, hierarchy is overridden to use negative status tokens.
+
+tokens:
+  container:
+    background: color.controls.{hierarchy}.background.{interaction}
+    # No border/stroke — buttons in this DS are fill-only, no outlines.
+    border-radius: radius.full
+    height: controls.height.{size}
+    padding-inline: spacing.component.6x
+    padding-inline--noPadding: spacing.component.none
+    min-width: controls.height.{size}  # Prevents collapse when label is very short
+
+  label:
+    color: color.controls.{hierarchy}.text-on-color.{interaction}
+    color--tertiary: color.controls.{hierarchy}.text.{interaction}
+    color--secondary: color.controls.{hierarchy}.text.{interaction}
+    typography:
+      base: Label.Base.default
+      small: Label.Small.default
+
+  icon:
+    color: color.controls.{hierarchy}.icon-on-color.{interaction}
+    color--tertiary: color.controls.{hierarchy}.icon.{interaction}
+    color--secondary: color.controls.{hierarchy}.icon.{interaction}
+    size:
+      base: icon.size.small
+      small: icon.size.xsmall
+    gap: spacing.component.4x
+
+  spinner:
+    color: color.controls.{hierarchy}.icon-on-color.{interaction}
+    size:
+      base: icon.size.small
+      small: icon.size.xsmall
+
+  focus:
+    pattern: double-ring
+    applies_to: container
+
+# ─── Destructive Override ───────────────────────────────────────────────────────
+# When destructive=true, the token lookup changes.
+# Instead of color.controls.{hierarchy}.*, it maps differently per hierarchy:
+
+destructive_mapping:
+  description: >
+    Destructive only applies to primary and tertiary hierarchies.
+    Primary destructive: filled red background, white text.
+    Tertiary destructive: red text on transparent background.
+    Brand and secondary do not have destructive variants.
+  token_override: >
+    Uses color.controls.{hierarchy}.*.error state tokens. Disabled state
+    falls back to regular disabled tokens (not error-disabled).
+
+# ─── Accessibility ──────────────────────────────────────────────────────────────
+
+accessibility:
+  element: button  # Native <button> — no ARIA role needed
+  focus-visible: true
+  keyboard:
+    Enter: activate
+    Space: activate
+  aria:
+    - "aria-disabled: true — when interaction=disabled (use instead of HTML disabled to keep focusability)"
+    - "aria-busy: true — when loading=true"
+  min-target-size: controls.minTarget
+  contrast: >
+    text-on-color tokens are pre-validated for 4.5:1 contrast ratio against
+    their corresponding background tokens in the semantic layer.
+
+# ─── References ─────────────────────────────────────────────────────────────────
+# External sources for implementation guidance. Canonical for accessibility,
+# keyboard patterns, and ARIA usage. Especially valuable for complex components.
+
+references:
+  - name: WAI-ARIA APG — Button Pattern
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/button/
+    use: Canonical keyboard and ARIA behavior
+  - name: PrimeNG Button
+    url: https://primeng.org/button
+    use: >
+      Angular implementation reference. Covers accessibility, keyboard navigation,
+      theming API, and Pass Through architecture. Particularly valuable for
+      complex components (Combobox, Dialog, Table) where keyboard patterns are non-trivial.
+  - name: Inclusive Components — Buttons
+    url: https://inclusive-components.design/buttons/
+    use: Production-tested accessibility patterns and edge cases
+
+# ─── Variants Matrix (for Figma generation) ─────────────────────────────────────
+# Figma has no CSS cascade, so theme axes become explicit variant properties here.
+# In code, device/semantic/shape are inherited from data-* attributes — no prop needed.
+
+figma:
+  component_set_name: Button
+  variant_properties:
+    hierarchy: [brand, primary, secondary, tertiary]
+    interaction: [enabled, hover, pressed, disabled]
+    size: [base, small]
+    icon: [none, left, right]  # Single enum — left+right simultaneously is impossible
+    destructive: [false, true]
+  component_properties:
+    Label:
+      type: text
+      default: "Button"
+      description: >
+        Editable button label text. Always visible — Button always has a text label.
+  nested_instances:
+    icon:
+      component: Icon
+      description: >
+        Swappable Icon component instance. Visible when icon variant is "left" or "right".
+        Designers can swap to any icon from the Icon component set.
+      conditional: icon !== 'none'
+      locked:
+        size: derived  # base→small, small→xsmall — set per variant, not designer-editable
+    spinner:
+      component: LoadingSpinner
+      description: >
+        LoadingSpinner instance shown during loading state. Replaces label + icon
+        visually (they become hidden). Not designer-configurable.
+      conditional: loading  # When loading variant is added
+      locked:
+        size: derived
+  excluded_combinations:
+    - { destructive: true, hierarchy: [brand, secondary] }
+  total_variants: 144  # (4h × 4i × 2s × 3icon) = 96 non-destructive + (2h × 4i × 2s × 3icon) = 48 destructive
+  notes: >
+    Device axis handled via Figma variable modes (Desktop/Tablet/Mobile),
+    not variant flattening. Icon is a variant property (none/left/right),
+    not two booleans — prevents the impossible state of both icons visible.
+    Icon and LoadingSpinner are nested component instances (swappable).
+    No strokes on any button — fill only. For icon-only buttons, see IconButton.

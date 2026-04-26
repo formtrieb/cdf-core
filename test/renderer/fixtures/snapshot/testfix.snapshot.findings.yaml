@@ -1,0 +1,23 @@
+schema_version: snapshot-findings-v1
+ds_name: testfix
+generated_at: 2026-04-26T00:00:00Z
+
+findings:
+  - topic: "vocab-near-miss: hover ↔ hovered"
+    observation: |
+      Two component sets use `hover` while one uses `hovered` for the same
+      interaction state. Profile §5.5 isolation pass would flag this in the
+      Production Scaffold; Snapshot does not run that lint.
+    evidence_path: ds_inventory.component_sets.entries[3].propertyDefinitions.State
+
+  - topic: "doc-frame coverage gap"
+    observation: |
+      Only 33.3% of component sets carry a Figma description. 2 doc-frames
+      detected by name pattern — whether they cover the gap is unverified.
+    evidence_path: ds_inventory.documentation_surfaces.figma_component_descriptions
+
+  - topic: "remote-library refs not deep-inspected"
+    observation: |
+      2 remote-library refs surfaced by walker §C; their downstream usage
+      (intentional vs legacy) was not inspected in this single-pass run.
+    evidence_path: ds_inventory.component_sets.remote_only_count

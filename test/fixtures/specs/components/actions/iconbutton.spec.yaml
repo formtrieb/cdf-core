@@ -1,0 +1,141 @@
+# Component Spec: IconButton
+# Icon-only action trigger. Inherits from Button — only differences are specified here.
+# Everything not listed is inherited from button.spec.yaml.
+
+name: IconButton
+category: Actions
+inherits: button.spec.yaml
+
+description: >
+  Icon-only action trigger — circular button with no visible text label.
+  Used for compact actions where the icon alone communicates intent
+  (close, menu, settings, etc.). Always requires an accessible label
+  (aria-label) since there is no visible text.
+  In code, IconButton is a thin composition wrapper around Button.
+  In Figma, it's a separate component set with a swappable Icon instance.
+
+# ─── Inheritance ──────────────────────────────────────────────────────────────
+# IconButton inherits from Button. The following are carried over unchanged:
+#
+#   theme_axes          — semantic, device, shape (identical cascade)
+#   properties          — hierarchy, destructive, size (same values, same defaults)
+#   states              — interaction, loading (identical behavior)
+#   tokens              — all color.controls.{hierarchy}.* patterns
+#   destructive_mapping — same override rules
+#   focus               — double-ring on container
+#   references          — WAI-ARIA APG Button Pattern
+#
+# Only the DIFFERENCES are specified below. If Button changes any of the above,
+# IconButton inherits those changes automatically.
+
+composition_strategy: >
+  In Angular: IconButton hosts a Button internally with icon-only configuration.
+  Shares all Button styles — no duplicate SCSS.
+  In Kirby: separate snippet that calls the button snippet with icon-only params.
+
+# ─── Properties: Removed from Button ─────────────────────────────────────────
+
+properties_removed:
+  - iconLeft     # No icon position — icon is always centered
+  - iconRight    # No icon position — icon is always centered
+  - noPadding    # No text to pad — always circular with equal padding
+
+# ─── Properties: Added / Replaced ─────────────────────────────────────────────
+
+properties_added:
+  name:
+    type: IconName
+    required: true
+    description: >
+      DS-level icon identifier. The icon IS the button's visual content.
+      Must exist in the icon manifest.
+
+  label:
+    type: string
+    required: true
+    description: >
+      Accessible label for screen readers. Required — there is no visible text,
+      so the accessible name must be provided explicitly. Rendered as aria-label
+      on the button element.
+
+# ─── Anatomy: Overrides ──────────────────────────────────────────────────────
+# Button anatomy has: container, icon, label, spinner.
+# IconButton modifies container and icon, removes label.
+
+anatomy_overrides:
+  container:
+    description: >
+      Circular interactive wrapper (width = height + radius.full). Inherits all
+      Button container tokens except padding-inline — uses equal centering instead.
+
+  icon:
+    description: >
+      Centered icon — the button's primary visual content. Always present
+      (unlike Button where icon is optional). Swappable in Figma.
+    conditional: null  # Always present — removes Button's "iconLeft || iconRight" condition
+
+  label:
+    removed: true  # No visible text — accessible name via aria-label
+
+# ─── Token Overrides ─────────────────────────────────────────────────────────
+# Only the structural differences from Button's token mapping.
+
+tokens_overrides:
+  container:
+    width: controls.height.{size}  # Added — circular (width = height, radius.full inherited)
+    padding-inline: null           # Removed — centering handles spacing
+    padding-inline--noPadding: null  # Removed — noPadding property doesn't exist
+    min-width: null                # Removed — width is explicit
+
+  label:
+    removed: true  # No label tokens
+
+# ─── Accessibility: Overrides ─────────────────────────────────────────────────
+# Inherits element, focus-visible, keyboard, min-target-size from Button.
+
+accessibility_overrides:
+  aria:
+    - "aria-label='{label}' — always required, provides the accessible name"
+    # aria-disabled and aria-busy inherited from Button
+  contrast: >
+    Icon-on-color tokens pre-validated for 3:1 contrast ratio (non-text
+    contrast per WCAG 1.4.11) against their corresponding backgrounds.
+
+# ─── Figma ────────────────────────────────────────────────────────────────────
+# Separate component set from Button — not a Button variant.
+# Simpler matrix — no icon position axis, no visible label.
+
+figma:
+  component_set_name: IconButton
+  variant_properties:
+    # hierarchy, interaction, size, destructive — inherited values from Button
+    icon: null  # Removed — icon is always present and centered
+  component_properties:
+    Label:
+      type: text
+      default: "Action"
+      description: >
+        Accessible label text — not visible in the design, but stored as
+        metadata for developer handoff. Maps to aria-label in code.
+  nested_instances:
+    icon:
+      component: Icon
+      description: >
+        Swappable Icon component instance. Always visible (this is icon-only).
+        Designers swap to any icon from the Icon component set.
+      locked:
+        size: derived  # base→small, small→xsmall
+    spinner:
+      component: LoadingSpinner
+      description: >
+        LoadingSpinner instance replacing the icon during loading state.
+      conditional: loading
+      locked:
+        size: derived
+  excluded_combinations:
+    - { destructive: true, hierarchy: [brand, secondary] }
+  total_variants: 48  # (4h × 4i × 2s) = 32 non-destructive + (2h × 4i × 2s) = 16 destructive
+  notes: >
+    Circular shape — equal width/height with radius.full, no label layer.
+    Icon is a nested component instance (swappable by designer).
+    Device axis via Figma variable modes. Shape axis via radius variable.

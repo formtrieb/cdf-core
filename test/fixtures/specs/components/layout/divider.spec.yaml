@@ -1,0 +1,114 @@
+# Component Spec: Divider
+# Simple structural component — good stress test for a minimal spec.
+# Validates that the spec format scales down cleanly from Button's complexity.
+
+name: Divider
+category: Layout
+description: >
+  Visual separator between content sections. Supports three visual weights,
+  three line styles, and two orientations. Non-interactive — pure visual structure.
+
+# ─── Theme Axes (CSS cascade context) ───────────────────────────────────────────
+# Only semantic applies. Device and shape have no effect on a divider —
+# it has no height tokens, no radius, and no interactive sizing.
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: divider.background.*
+
+# ─── Properties (orthogonal axes) ───────────────────────────────────────────────
+
+properties:
+  orientation:
+    type: enum
+    values: [horizontal, vertical]
+    default: horizontal
+    description: >
+      Direction of the divider line. Horizontal spans the full width of its
+      parent. Vertical spans the full height of its parent.
+
+  weight:
+    type: enum
+    values: [primary, secondary, tertiary]
+    default: primary
+    description: >
+      Visual emphasis level. Primary is most visible, tertiary is most subtle.
+      Maps directly to divider.background.{weight} tokens, which reference
+      neutral interaction backgrounds at decreasing intensity.
+
+  style:
+    type: enum
+    values: [solid, dashed, dotted]
+    default: solid
+    description: >
+      Line rendering style. Solid, dashed, and dotted are meaningful
+      structural distinctions — e.g., dashed for provisional boundaries,
+      dotted for related-but-separate content.
+
+# ─── Anatomy ────────────────────────────────────────────────────────────────────
+# Single-part component. No composition, no children.
+
+anatomy:
+  line:
+    element: box
+    description: >
+      The divider line. 1px on its cross-axis, stretching to fill the
+      parent on its main axis. Rendered via CSS border to support all
+      three style values uniformly.
+
+# ─── Token Mapping ──────────────────────────────────────────────────────────────
+# Token names reflect Figma's layer architecture (background fill), but in code
+# the value is applied as border-color to support solid/dashed/dotted uniformly.
+
+tokens:
+  line:
+    border-color: divider.background.{weight}
+    border-width: borderWidth.thin
+    border-style: "{style}"  # solid | dashed | dotted
+    # Main-axis dimension is layout-driven (100% of parent), not token-mapped.
+    # Cross-axis dimension equals thickness.
+
+# ─── Accessibility ──────────────────────────────────────────────────────────────
+
+accessibility:
+  element: hr  # Horizontal: native <hr>. Vertical: <div role="separator">.
+  focus-visible: false  # Non-interactive — never receives focus
+  keyboard: {}  # No keyboard interaction
+  aria:
+    - "role: separator — implicit on <hr>, explicit on <div> for vertical"
+    - "aria-orientation: vertical — only needed for vertical (horizontal is default)"
+  contrast: >
+    Decorative element — WCAG does not require contrast ratios for non-text
+    decorative content. However, primary weight should remain perceptible
+    against the surface it sits on.
+
+# ─── References ─────────────────────────────────────────────────────────────────
+
+references:
+  - name: WAI-ARIA — Separator Role
+    url: https://www.w3.org/TR/wai-aria-1.2/#separator
+    use: >
+      Canonical ARIA semantics. Note: separator has two modes — when not
+      focusable it's purely structural (our case). When focusable it becomes
+      an interactive splitter (not our case).
+  - name: PrimeNG Divider
+    url: https://primeng.org/divider
+    use: Angular implementation reference for orientation, styling, and accessibility.
+  - name: MDN — hr element
+    url: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/hr
+    use: Semantic HTML baseline for horizontal dividers.
+
+# ─── Variants Matrix (for Figma generation) ─────────────────────────────────────
+# Minimal matrix. No theme axis flattening needed — semantic is handled by
+# Figma's mode switching on variables, not variant properties.
+
+figma:
+  component_set_name: Divider
+  variant_properties:
+    orientation: [horizontal, vertical]
+    weight: [primary, secondary, tertiary]
+    style: [solid, dashed, dotted]
+  excluded_combinations: []
+  total_variants: 18  # 2 orientation × 3 weight × 3 style

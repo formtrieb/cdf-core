@@ -1,0 +1,6 @@
+name: Grandchild
+version: "1.0.0"
+extends: "./child.profile.yaml"
+
+vocabularies:
+  size: { description: "size axis", values: [sm, md, lg] }

@@ -1,0 +1,23 @@
+name: Parent
+version: "1.0.0"
+cdf_version: ">=1.0.0"
+dtcg_version: "2025.10"
+description: "Test parent profile."
+
+vocabularies:
+  hierarchy: { description: "hierarchy axis", values: [primary, secondary] }
+
+token_grammar:
+  g1: { pattern: "color.{hierarchy}", dtcg_type: color, description: "x" }
+
+theming:
+  modifiers: {}
+  set_mapping: {}
+
+naming:
+  css_prefix: "pa-"
+  token_prefix: "--pa-"
+  methodology: BEM
+  pattern: "block__element--modifier"
+  casing: { components: PascalCase }
+  reserved_names: {}

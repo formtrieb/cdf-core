@@ -1,0 +1,247 @@
+# Component Spec: Selection Tag
+# Toggleable pill — a styled checkbox/filter alternative. Visually communicates
+# selected/unselected state through appearance shift: outlined → filled.
+# Used in filter bars, preference selection, and quick-toggle contexts.
+
+name: SelectionTag
+category: Inputs
+description: >
+  Toggleable pill that lets users select or deselect an option. Acts as a styled
+  checkbox alternative with immediate visual feedback — unselected is outlined
+  (secondary hierarchy), selected is filled (brand hierarchy). Used in filter
+  bars, onboarding preference flows, and anywhere visible toggle selection is
+  needed. Supports single and multi-select when grouped. Not dismissible — for
+  removable values use Tag, for non-interactive status display use StatusChip.
+
+# ─── Theme Axes (CSS cascade context) ───────────────────────────────────────────
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*, color.text.*
+  device:
+    values: [Desktop, Tablet, Mobile]
+    data_attribute: data-device
+    affects: controls.height.*, controls.minTarget, spacing.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# ─── Properties (orthogonal axes) ───────────────────────────────────────────────
+
+properties:
+  size:
+    type: enum
+    values: [base, small]
+    default: base
+    description: >
+      Controls height and internal spacing. Base for standalone filter bars,
+      small for dense contexts or when composed inside other components.
+
+  showCheck:
+    type: boolean
+    default: false
+    description: >
+      When true and selected=true, displays a checkmark icon in the trailing
+      position as an additional selected indicator. Provides redundant
+      visual feedback beyond the color shift — useful for accessibility
+      and contexts where color alone may not be sufficient.
+
+  showIcon:
+    type: boolean
+    default: false
+    description: >
+      When true and selected, displays a Icon component in the leading postion
+# ─── States ───────────────────────────────────────────────────────────────────────
+
+states:
+  interaction:
+    values: [enabled, hover, pressed, disabled]
+    runtime: true
+    description: >
+      Standard interaction states. The entire component is the interactive
+      target — no separate dismiss or trigger element. Disabled prevents
+      toggling and reduces visual prominence.
+
+  selected:
+    values: [false, true]
+    runtime: true
+    description: >
+      Whether the option is currently selected. Drives the visual appearance
+      shift: unselected uses secondary hierarchy tokens (outlined),
+      selected uses brand hierarchy tokens (filled). This is the core
+      behavioral axis — toggling selected is the component's only action.
+
+# ─── Anatomy ────────────────────────────────────────────────────────────────────
+# Simple structure — the entire pill is the interactive target.
+
+anatomy:
+  container:
+    element: button
+    description: >
+      Pill-shaped toggle button. The entire surface is clickable.
+      Handles background, stroke, radius, height. Uses native <button>
+      with aria-pressed to communicate toggle state.
+
+  checkIcon:
+    component: Icon
+    description: >
+      Optional checkmark shown when selected=true and showCheck=true.
+      Appears in the trailing position. Provides redundant visual
+      indication of selected state beyond the color shift.
+    conditional: selected && showCheck
+    locked:
+      name: check
+      size:
+        base: xsmall
+        small: xsmall
+      color: controlled
+
+  leadingIcon:
+    component: Icon
+    description: >
+      Optional decorative or contextual icon. Appears in the leading
+      position when showIcon=true
+    conditional: has leading icon
+    locked:
+      size:
+        base: xsmall
+        small: xsmall
+      color: controlled
+
+  label:
+    element: text
+    description: >
+      Tag text content. Keep short (1-2 words) for scannability.
+      Consumer-provided. Does not change between selected/unselected
+      states — the label stays constant to avoid screen reader confusion.
+
+# ─── Token Mapping ──────────────────────────────────────────────────────────────
+# SelectionTag uses ONLY the accent hierarchy — both selected and unselected.
+# The selected/unselected distinction is expressed through different STATE values
+# within color.controls.accent.*, not by switching hierarchies.
+#
+#   unselected + enabled  → no fill, stroke = color.interaction.stroke.neutral.quaternary,
+#                           text = color.controls.accent.text.inactive
+#   unselected + hover    → fill = accent.background.hover, text = accent.text-on-color.hover
+#   unselected + disabled → no fill, stroke = color.interaction.stroke.neutral.quinary,
+#                           text = accent.text.disabled
+#   selected + enabled    → fill = accent.background.enabled, text = accent.text-on-color.enabled
+#   selected + hover      → fill = accent.background.hover, text = accent.text-on-color.hover
+
+tokens:
+  container:
+    # Selected states use accent background
+    background--selected: color.controls.accent.background.{interaction}
+    # Unselected enabled/disabled have no fill; hover/pressed get accent background
+    background--unselected--enabled: none
+    background--unselected--hover: color.controls.accent.background.hover
+    background--unselected--pressed: color.controls.accent.background.pressed
+    background--unselected--disabled: none
+    # Stroke — unselected uses neutral interaction stroke, selected uses accent
+    border-color--unselected--enabled: color.interaction.stroke.neutral.quaternary
+    border-color--unselected--disabled: color.interaction.stroke.neutral.quinary
+    border-color--selected: color.controls.accent.stroke.{interaction}
+    border-width: borderWidth.thin
+    border-radius: radius.full  # Pill shape
+    height: controls.height.{size}
+    padding-inline: spacing.component.4x
+    gap: spacing.component.2x  # Space between icon and label
+
+  label:
+    # Unselected uses plain text tokens (inactive/disabled)
+    color--unselected--enabled: color.controls.accent.text.inactive
+    color--unselected--disabled: color.controls.accent.text.disabled
+    # Unselected hover/pressed and all selected states use text-on-color
+    color--unselected--hover: color.controls.accent.text-on-color.hover
+    color--unselected--pressed: color.controls.accent.text-on-color.pressed
+    color--selected: color.controls.accent.text-on-color.{interaction}
+    typography:
+      base: Label.Small.default
+      small: Label.Small.default
+
+  checkIcon:
+    color: color.controls.accent.icon-on-color.{interaction}
+    size:
+      base: icon.size.xsmall
+      small: icon.size.xsmall
+
+  leadingIcon:
+    color--unselected--enabled: color.controls.accent.icon.inactive
+    color--unselected--hover: color.controls.accent.icon-on-color.hover
+    color--selected: color.controls.accent.icon-on-color.{interaction}
+    size:
+      base: icon.size.xsmall
+      small: icon.size.xsmall
+
+  focus:
+    pattern: double-ring
+    applies_to: container
+
+# ─── Token Gaps ───────────────────────────────────────────────────────────────────
+
+token_gaps: []  # Accent hierarchy fully populated
+
+# ─── Accessibility ──────────────────────────────────────────────────────────────
+
+accessibility:
+  element: button  # Native <button> with aria-pressed
+  focus-visible: true
+  keyboard:
+    Enter: Toggle selected state.
+    Space: Toggle selected state.
+  aria:
+    - "aria-pressed: true|false — reflects selected state. Use aria-pressed on button role, not checkbox role"
+    - "aria-disabled: true — when interaction=disabled (prefer over HTML disabled to keep focusability)"
+    - "aria-label: use a stable label that does not change between states — prevents screen reader confusion when toggling"
+    - "When grouped: wrap in a container with role='group' and aria-label describing the group purpose"
+    - "For single-select groups: consider role='radiogroup' with role='radio' on each item instead of toggle buttons"
+  min-target-size: controls.minTarget
+  contrast: >
+    Unselected uses standard text tokens against secondary background.
+    Selected uses text-on-color tokens pre-validated for 4.5:1 contrast
+    against brand background. Both states must be clearly distinguishable —
+    the showCheck property provides redundant non-color indication.
+
+# ─── References ─────────────────────────────────────────────────────────────────
+
+references:
+  - name: WAI-ARIA APG — Button Pattern (Toggle)
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/button/
+    use: >
+      Toggle button pattern using aria-pressed. Canonical keyboard and
+      ARIA behavior for buttons that maintain pressed state.
+  - name: PrimeNG ToggleButton
+    url: https://primeng.org/togglebutton
+    use: >
+      Angular implementation reference. Covers sizes, accessibility with
+      aria-pressed, and the importance of stable aria-label across states.
+  - name: Design Systems Surf — Chip Blueprint
+    url: https://designsystems.surf/blueprints/chip
+    use: >
+      Cross-system analysis of filter chip patterns — SelectionTag is the
+      "filter chip" variant in Material Design terminology.
+
+# ─── Variants Matrix (for Figma generation) ─────────────────────────────────────
+
+figma:
+  component_set_name: SelectionTag
+  variant_properties:
+    device: [desktop, tablet, mobile]
+    size: [base, small]
+    selected: [false, true]
+    interaction: [enabled, hover, pressed, disabled]
+    showCheck: [false, true]
+    showIcon: [false, true]
+  component_properties:
+    leadingIcon: boolean  # Toggle, not a variant axis
+  excluded_combinations:
+    - { selected: false, showCheck: true }
+  total_variants: 144  # 3 device × 2 size × 2 selected × 4 state × 2 showCheck (minus exclusions ≈ 144)
+  notes: >
+    Variant count is higher than equivalent component sets that omit a
+    device axis (handled there via external theming).
+    Leading icon is a component property toggle. showCheck=true with
+    selected=false is excluded — no checkmark to show when unselected.

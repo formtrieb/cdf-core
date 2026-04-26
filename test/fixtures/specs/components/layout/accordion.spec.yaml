@@ -1,0 +1,343 @@
+# Component Spec: Accordion
+# Expandable disclosure panel with a clickable header that reveals/hides content.
+# Supports title, optional subtitle, optional left icon, optional accessories,
+# and two sizes. Used for FAQ sections, settings groups, and collapsible content.
+
+name: Accordion
+category: Layout
+description: >
+  Expandable disclosure panel with a header that users click to reveal or hide
+  content. The header displays a title, optional subtitle, optional left icon,
+  and optional right accessory. A chevron icon rotates to indicate expanded state.
+  Content is rendered in a slot below the header when expanded. Supports two sizes
+  (base and large) for different information density contexts. Uses the interactive
+  controls token pattern (primary hierarchy) for state-driven color changes.
+  For grouping multiple accordions, wrap them in a parent container.
+
+# --- Theme Axes (CSS cascade context) --------------------------------------------------------
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.controls.*, color.page, color.interaction.*
+  device:
+    values: [Desktop, Tablet, Mobile]
+    data_attribute: data-device
+    affects: spacing.component.*, fontSizes.*, lineHeights.*
+  shape:
+    values: [Round, Sharp]
+    data_attribute: data-shape
+    affects: radius.*
+
+# --- Properties (consumer-configurable inputs) ------------------------------------------------
+
+properties:
+  size:
+    type: enum
+    values: [base, large]
+    default: base
+    description: >
+      Controls overall density — header padding and typography scale.
+      Base is compact for dense layouts, large provides more breathing room.
+
+  showSubtitle:
+    type: boolean
+    default: true
+    description: >
+      When true, displays a subtitle line below the title text.
+      Useful for providing additional context about the accordion section.
+
+  showIcon:
+    type: boolean
+    default: false
+    description: >
+      When true, displays an icon to the left of the title.
+      Use for visual categorization of accordion sections.
+
+  leftAccessory:
+    type: boolean
+    default: false
+    description: >
+      When true, displays a left accessory slot before the title.
+      Can be used for custom elements beyond the standard icon.
+
+  rightAccessory:
+    type: boolean
+    default: false
+    description: >
+      When true, displays a right accessory slot after the title text.
+      Useful for badges, status indicators, or action buttons.
+
+# --- States -----------------------------------------------------------------------------------
+
+states:
+  interaction:
+    values: [enabled, hover, pressed, disabled]
+    runtime: true
+    description: >
+      Standard interaction states for the header region. The entire header
+      is the click target. Disabled prevents expand/collapse and reduces
+      visual prominence. Pressed provides momentary feedback on click.
+
+  expanded:
+    values: [false, true]
+    runtime: true
+    description: >
+      Whether the content panel is currently visible. Controls chevron
+      direction (down when collapsed, up when expanded), content visibility,
+      and layout direction (horizontal when collapsed, vertical when expanded
+      to accommodate the content area below the header).
+
+# --- Anatomy ----------------------------------------------------------------------------------
+# Header contains icon, title group, accessories, and chevron.
+# Content slot appears below the header when expanded.
+
+anatomy:
+  container:
+    element: div
+    description: >
+      Root wrapper. Horizontal layout when collapsed, vertical when expanded.
+      Has a bottom border stroke that changes color per interaction state.
+      Background uses the page token for a transparent-to-surface feel.
+
+  headerContainer:
+    element: button
+    description: >
+      Clickable header region using horizontal flex layout. Contains the
+      left icon, title group, right accessory, and chevron indicator.
+      Padding uses spacing.component.4x (horizontal) and spacing.component.5x
+      (vertical). Full-width with content distributed via flex.
+
+  icon:
+    component: Icon
+    description: >
+      Optional left icon for visual categorization. Hidden by default,
+      controlled by the showIcon property.
+    conditional: showIcon
+    locked:
+      size: small
+      color: controlled
+
+  titleGroup:
+    element: div
+    description: >
+      Wrapper for title and subtitle text. Fills available horizontal space.
+      Uses horizontal layout with center vertical alignment.
+
+  title:
+    element: span
+    description: >
+      Primary header text. Consumer-provided via the title text property.
+      Uses label/large typography with medium weight. Color changes per
+      interaction state via the controls token pattern.
+
+  subtitle:
+    element: span
+    description: >
+      Optional secondary text below or beside the title.
+      Controlled by the showSubtitle property. Provides additional
+      context about the accordion section content.
+    conditional: showSubtitle
+
+  rightAccessory:
+    element: span
+    description: >
+      Optional right-aligned slot within the title container.
+      Controlled by the rightAccessory boolean property. Can host
+      badges, tags, or other small informational elements.
+    conditional: rightAccessory
+
+  chevron:
+    component: Icon
+    description: >
+      Expand/collapse indicator icon. Shows chevron_down when collapsed,
+      chevron_up when expanded. Fixed at xsmall size. Positioned at the
+      trailing edge of the header. Rotates 180deg on expand with animation.
+    locked:
+      name:
+        collapsed: chevron_down
+        expanded: chevron_up
+      size: xsmall
+      color: controlled
+
+  contentContainer:
+    element: div
+    description: >
+      Wrapper for the expandable content area. Only rendered when
+      expanded=true. Horizontal padding matches the header (spacing.component.4x).
+      Separated from header by spacing.component.2x gap.
+    conditional: "expanded: true"
+
+  content:
+    element: slot
+    description: >
+      Consumer-provided content slot. Accepts any content — text, forms,
+      lists, nested components. The _Slot in Figma is a placeholder for
+      this projection area.
+
+# --- Derived ----------------------------------------------------------------------------------
+
+derived:
+  chevronSize:
+    from: size
+    mapping: { base: xsmall, large: small }
+    description: >
+      Chevron icon size scales with the component size property.
+
+# --- Events -----------------------------------------------------------------------------------
+
+events:
+  toggled:
+    type: boolean
+    description: >
+      Emitted when the user expands or collapses the accordion. Carries the
+      new expanded value (true = open, false = closed). Fires on click and
+      keyboard activation (Enter/Space). Does not fire when disabled.
+
+# --- Tokens -----------------------------------------------------------------------------------
+
+tokens:
+  container:
+    background: color.page
+    border-color: "color.controls.primary.stroke.{interaction}"
+    border-width: 1px
+    # Border applied to top and bottom edges only (border-style: solid none)
+    gap--expanded: spacing.component.2x
+    padding: spacing.component.none
+
+  headerContainer:
+    padding-inline: spacing.component.4x
+    padding-block: spacing.component.5x
+    gap: spacing.component.4x
+
+  title:
+    color: "color.controls.primary.text.{interaction}"
+    font-size: fontSizes.label.large
+    font-weight: fontWeights.medium
+    font-family: fontFamilies.baseFamily
+    line-height: lineHeights.label.large
+
+  subtitle:
+    color: "color.controls.primary.text.{interaction}"
+
+  chevron:
+    color: color.interaction.icon.primary
+    size: dimension.5x
+
+  contentContainer:
+    padding-inline: spacing.component.4x
+    padding-block-end: spacing.component.5x
+
+  focus:
+    pattern: double-ring
+    applies_to: headerContainer
+
+# --- CSS Architecture -------------------------------------------------------------------------
+
+css_architecture:
+  selector: .ft-accordion
+  class_pattern: "ft-accordion--{modifier}__{child}"
+  prefix: ft
+  methodology: BEM
+  private_custom_properties:
+    - --_border-color   # Resolved stroke color per interaction state
+    - --_title-color    # Resolved title text color per interaction state
+    - --_chevron-rotate # 0deg collapsed, 180deg expanded
+
+# --- Token Gaps -------------------------------------------------------------------------------
+
+token_gaps:
+  - "color.controls.primary.stroke.* — active and inactive states are placeholder (#f305b7)"
+  - "color.controls.primary.text.* — active and inactive states are placeholder (#f305b7)"
+  - "color.controls.primary.icon.* — most states are placeholder (#f305b7) — chevron uses color.interaction.icon.primary instead"
+
+# --- Accessibility ----------------------------------------------------------------------------
+
+accessibility:
+  element: region  # The accordion item is a disclosure widget
+  focus-visible: true
+  keyboard:
+    Enter: Toggle expanded state.
+    Space: Toggle expanded state.
+    "Home (in group)": Focus first accordion header.
+    "End (in group)": Focus last accordion header.
+  aria:
+    - "The header button uses aria-expanded='true|false' to communicate expanded state"
+    - "aria-controls: points to the content panel's ID"
+    - "The content panel uses role='region' with aria-labelledby pointing to the header button"
+    - "aria-disabled='true' when interaction=disabled (prefer over HTML disabled for focusability)"
+    - "When multiple accordions are grouped, wrap in an element with role='group' or use heading hierarchy"
+  min-target-size: 44px  # Header height meets minimum touch target
+  contrast: >
+    Title text uses color.controls.primary.text tokens against color.page background —
+    pre-validated for 4.5:1 contrast. Border stroke uses color.controls.primary.stroke
+    tokens — 3:1 non-text contrast. Chevron icon uses color.interaction.icon.primary
+    against color.page — validated for 3:1 non-text contrast.
+
+# --- Behavior --------------------------------------------------------------------------------
+
+behavior:
+  transitions:
+    - property: border-color
+      element: container
+      duration: 80ms
+      easing: ease-in-out
+    - property: color
+      element: title
+      duration: 80ms
+      easing: ease-in-out
+    - property: transform  # Chevron rotation
+      element: chevron
+      duration: 200ms
+      easing: ease-in-out
+    - property: grid-template-rows  # Content reveal animation
+      element: contentContainer
+      duration: 200ms
+      easing: ease-in-out
+
+# --- References -------------------------------------------------------------------------------
+
+references:
+  - name: WAI-ARIA APG -- Accordion Pattern
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/accordion/
+    use: >
+      Canonical accordion pattern. Header buttons with aria-expanded control
+      content panel visibility. Supports Home/End navigation when grouped.
+  - name: WCAG 1.4.11 Non-text Contrast
+    url: https://www.w3.org/WAI/WCAG21/Understanding/non-text-contrast.html
+    use: >
+      Border stroke and chevron icon are non-text UI elements requiring
+      3:1 contrast ratio against surrounding background.
+
+# --- Figma ------------------------------------------------------------------------------------
+
+figma:
+  component_set_name: Accordion
+  variant_properties:
+    size: [base, large]
+    state: [enabled, hover, pressed, disabled, open, open-hover, open-pressed]
+  component_properties:
+    title: text
+    subtitle: text
+    showSubtitle: boolean
+    showIcon: boolean
+    leftAccessory: boolean
+    rightAccessory: boolean
+  variant_to_cdf_mapping:
+    state:
+      enabled: "interaction: enabled, expanded: false"
+      hover: "interaction: hover, expanded: false"
+      pressed: "interaction: pressed, expanded: false"
+      disabled: "interaction: disabled, expanded: false"
+      open: "interaction: enabled, expanded: true"
+      open-hover: "interaction: hover, expanded: true"
+      open-pressed: "interaction: pressed, expanded: true"
+  excluded_combinations: []
+  total_variants: 14  # 2 size x 7 state
+  notes: >
+    Figma uses compound state values (open-hover, open-pressed) to represent the
+    Cartesian product of interaction and expanded axes. CDF separates these into
+    two independent state axes. The _Slot instance in the open variants is a Figma
+    placeholder for projected content. Device sizing differences are handled via
+    the device theme axis, not as a variant property.

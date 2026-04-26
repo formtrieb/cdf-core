@@ -1,0 +1,150 @@
+# Component Spec: LoadingSpinner
+# Leaf primitive — animated indicator for async operations.
+# Structurally parallel to Icon: non-interactive, color via currentColor,
+# size locked by parent. The difference is the rotation animation.
+
+name: LoadingSpinner
+category: Primitives
+description: >
+  Animated circular spinner indicating an ongoing async operation. Non-interactive.
+  Color inherits via currentColor — parent components control it through their
+  hierarchy tokens. Size is set by the parent or directly via the size property.
+  Uses the same size scale as Icon so parents can swap between icon and spinner
+  at the same dimensions (e.g., Button loading state replaces icon with spinner).
+
+# ─── Theme Axes ────────────────────────────────────────────────────────────────
+# LoadingSpinner has no theme axis of its own. Color via currentColor,
+# size via explicit input from parent.
+
+theme_axes: {}
+
+# ─── Properties ────────────────────────────────────────────────────────────────
+
+properties:
+  size:
+    type: enum
+    values: [xsmall, small, base, large, xlarge]
+    default: base
+    description: >
+      Spinner dimensions. xsmall–large reuse icon.size.* tokens (xsmall=12px,
+      small=16px, base=20px, large=24px on the 4px grid). xlarge is spinner-only
+      (no icon equivalent) — exact value TBD pending Figma refinement.
+      When used inside a parent component (Button, ComboBox), the parent locks
+      this — consumers don't set it directly.
+
+  label:
+    type: string
+    default: "Loading"
+    description: >
+      Accessible label for screen readers. Rendered as aria-label on the
+      container. Defaults to "Loading" — parent components may override with
+      context-specific text (e.g., "Submitting form").
+
+# ─── States ────────────────────────────────────────────────────────────────────
+# No interactive states. The spinner is either present or not — parent
+# components control visibility.
+
+states: {}
+
+# ─── Anatomy ───────────────────────────────────────────────────────────────────
+
+anatomy:
+  container:
+    element: inline-flex-box
+    description: >
+      Host element. Provides inline-flex centering and flex-shrink: 0 so the
+      spinner holds its dimensions inside flex layouts. Identical layout
+      contract to Icon's container — they're interchangeable in parent slots.
+
+  track:
+    element: svg-circle
+    description: >
+      Background circle. Subtle, low-contrast ring showing the full path.
+      Uses currentColor at reduced opacity.
+
+  indicator:
+    element: svg-circle
+    description: >
+      Animated arc — the visible spinning element. Partial stroke-dasharray
+      creates the arc. CSS animation rotates it continuously.
+      Uses currentColor at full opacity.
+
+# ─── Token Mapping ─────────────────────────────────────────────────────────────
+
+tokens:
+  container:
+    width: icon.size.{size}
+    height: icon.size.{size}
+    display: inline-flex
+
+  track:
+    stroke: currentColor
+    opacity: opacity.light  # 0.24 — visible but subdued background ring
+    stroke-width: 2px  # Proportional — works across all sizes
+    fill: none
+
+  indicator:
+    stroke: currentColor
+    opacity: opacity.full  # fully opaque — paired with track.opacity = opacity.light
+    stroke-width: 2px
+    fill: none
+    stroke-dasharray: "75% of circumference"  # ~270° arc
+    stroke-linecap: round
+
+  animation:
+    duration: duration.slow  # 350ms per rotation — smooth, not frantic
+    easing: easing.linear  # Constant speed rotation
+    iteration: infinite
+    transform: rotate(360deg)
+
+# ─── Token Gaps ───────────────────────────────────────────────────────────────
+
+token_gaps: []
+# No new tokens needed. Reuses:
+# - icon.size.* for dimensions (shared with Icon)
+# - opacity.light for track visibility
+# - duration.slow + easing.linear for animation
+# - currentColor for color inheritance
+
+# ─── Accessibility ──────────────────────────────────────────────────────────────
+
+accessibility:
+  element: span  # Non-interactive container
+  focus-visible: false
+  keyboard: {}  # Not focusable, not interactive
+  aria:
+    - "role='status' — announces to AT that content is updating"
+    - "aria-label='{label}' — provides accessible name (default: 'Loading')"
+    - "The SVG is aria-hidden='true' — the container's role/label provides the semantics"
+  motion:
+    - "prefers-reduced-motion: reduce — stops rotation animation, shows static arc indicator instead"
+    - "The static arc still communicates 'loading' visually without motion"
+
+# ─── References ─────────────────────────────────────────────────────────────────
+
+references:
+  - name: WAI-ARIA — Status Role
+    url: https://www.w3.org/TR/wai-aria-1.2/#status
+    use: Canonical definition of role="status" for loading indicators
+  - name: MDN — prefers-reduced-motion
+    url: https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion
+    use: Reduced motion implementation patterns
+  - name: PrimeNG ProgressSpinner
+    url: https://primeng.org/progressspinner
+    use: Angular implementation reference for indeterminate spinners
+
+# ─── Figma ─────────────────────────────────────────────────────────────────────
+# Minimal variant matrix — just size. No interaction states, no hierarchy,
+# no semantic axis needed. In Figma the spinner is a static arc (no animation).
+
+figma:
+  component_set_name: LoadingSpinner
+  variant_properties:
+    size: [xsmall, small, base, large, xlarge]
+  excluded_combinations: []
+  total_variants: 5  # 5 sizes
+  notes: >
+    Static representation — Figma can't animate. Shows the arc indicator at
+    ~270° with track ring behind it. Color uses currentColor-equivalent
+    (Figma "Preferred values" pointing to icon color tokens). Swap target
+    for Icon in Button/ComboBox loading states.

@@ -1,0 +1,153 @@
+# Component Spec: Badge
+# Non-interactive numeric count indicator — compact, circular, semantic colors.
+# Companion to StatusChip (text labels) and StatusDot (minimal dots).
+# Shares the same surface/text token pattern, not color.controls.*.
+
+name: Badge
+category: Status
+description: >
+  Non-interactive numeric indicator displaying counts or quantities
+  associated with UI elements. Uses semantic color to communicate the
+  nature of the count (brand, neutral, success, warning, error).
+  Two hierarchy levels: primary (filled) and secondary (outlined/soft).
+  Compact and circular for single digits, grows horizontally for larger
+  numbers. Not interactive — purely visual and informational.
+
+# ─── Theme Axes (CSS cascade context) ───────────────────────────────────────────
+# Only semantic axis applies for color. No device-aware sizing — Badge
+# is a static element, not an interactive control.
+
+theme_axes:
+  semantic:
+    values: [Light, Dark]
+    data_attribute: data-semantic
+    affects: color.surface.*, color.text.*, color.interaction.background.*
+
+# ─── Properties (orthogonal axes) ───────────────────────────────────────────────
+
+properties:
+  intent:
+    type: enum
+    values: [brand, neutral, success, warning, error]
+    default: neutral
+    description: >
+      Semantic meaning of the count. Brand for product-specific metrics
+      (e.g., app notifications), neutral for default/inactive counts,
+      success/warning/error for status-related counts. Note: Badge uses
+      "brand" where StatusChip uses "info" — Badge counts are typically
+      product-contextual, not system-informational.
+    token_mapping:
+      brand: color.*.brand.*
+      neutral: color.*.neutral.* / color.text.primary
+      success: color.*.positive.*
+      warning: color.*.warning.* / color.surface.yellow.*
+      error: color.*.negative.*
+
+  hierarchy:
+    type: enum
+    values: [primary, secondary]
+    default: primary
+    description: >
+      Visual emphasis level. Primary uses a filled background with
+      inverted text — stands out strongly, use when the count demands
+      attention. Secondary uses a tinted surface with colored text —
+      more subtle, for supplementary counts.
+
+# ─── States ───────────────────────────────────────────────────────────────────────
+# None. Badge is purely visual.
+
+states: {}
+
+# ─── Anatomy ────────────────────────────────────────────────────────────────────
+
+anatomy:
+  container:
+    element: span
+    description: >
+      Circular/pill wrapper. Maintains circular shape for single digits
+      (min-width equals height). Grows horizontally with consistent
+      padding for multi-digit numbers (10+). Purely presentational.
+
+  value:
+    element: text
+    description: >
+      Numeric content only. Consumer-provided. Single digits (1-9)
+      maintain circular container. Multi-digit values grow the container
+      width while maintaining pill shape.
+
+# ─── Token Mapping ──────────────────────────────────────────────────────────────
+# Same color.system-status.* token group as StatusChip.
+# Badge-specific: uses radius.full-static for circular shape and
+# dimension tokens directly for fixed sizing (not controls.height.*).
+#
+# Pattern: color.system-status.{intent}.{element}.{hierarchy}
+
+tokens:
+  container:
+    background: color.system-status.{intent}.background.{hierarchy}
+    border-color: color.system-status.{intent}.stroke.{hierarchy}
+    border-width: borderWidth.thin
+    border-radius: radius.full-static  # Circular — fixed full radius, not shape-axis-aware
+    min-width: dimension.5x  # 20px — maintains circle for single digits
+    height: dimension.5x  # 20px — fixed height
+    padding-inline: spacing.component.2x  # Horizontal growth for multi-digit
+
+  value:
+    color: color.system-status.{intent}.text-on-color.{hierarchy}
+    typography: Label.Small.default
+
+# ─── Intent → Token Name Mapping ──────────────────────────────────────────────
+# Same mapping as StatusChip:
+#   intent=brand   → token path: brand
+#   intent=neutral → token path: neutral
+#   intent=success → token path: positive
+#   intent=warning → token path: warning
+#   intent=error   → token path: negative
+
+# ─── Token Gaps ───────────────────────────────────────────────────────────────────
+
+token_gaps: []
+
+# ─── Accessibility ──────────────────────────────────────────────────────────────
+
+accessibility:
+  element: span  # Non-interactive
+  focus-visible: false
+  keyboard: {}
+  aria:
+    - "No ARIA role needed — the numeric content is the accessible name"
+    - "When overlaid on another element (icon, avatar), use aria-label on the parent to combine context: 'Notifications: 5'"
+    - "For dynamic counts, the parent element or a live region should announce changes"
+    - "Do not rely on color alone — the numeric value provides the primary information, color adds semantic context"
+  contrast: >
+    Primary: inverted text on filled background — pre-validated for 4.5:1.
+    Secondary: colored text on tinted surface — same contrast considerations
+    as StatusChip. Warning intent requires extra validation.
+
+# ─── References ─────────────────────────────────────────────────────────────────
+
+references:
+  - name: PrimeNG Badge
+    url: https://primeng.org/badge
+    use: >
+      Angular implementation reference. Covers severity levels, sizing,
+      overlay positioning on buttons/icons, and directive-based usage.
+  - name: MDN — CSS min-width for circular badges
+    url: https://developer.mozilla.org/en-US/docs/Web/CSS/min-width
+    use: >
+      min-width = height pattern for circular single-digit badges
+      that grow into pills for multi-digit content.
+
+# ─── Variants Matrix (for Figma generation) ─────────────────────────────────────
+
+figma:
+  component_set_name: Badge
+  variant_properties:
+    intent: [brand, neutral, success, warning, error]
+    hierarchy: [primary, secondary]
+  excluded_combinations: []
+  total_variants: 10  # 5 intent × 2 hierarchy
+  notes: >
+    10 variants, same axes. No device axis (static sizing), no interaction
+    states. Content length (single vs multi-digit) is handled by
+    auto-layout, not variants.

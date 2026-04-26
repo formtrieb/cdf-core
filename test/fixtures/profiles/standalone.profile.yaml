@@ -1,0 +1,23 @@
+name: Standalone
+version: "1.0.0"
+cdf_version: ">=1.0.0"
+dtcg_version: "2025.10"
+description: "Minimal standalone profile for tests."
+
+vocabularies:
+  hierarchy: { description: "hierarchy axis", values: [primary, secondary] }
+
+token_grammar:
+  g1: { pattern: "color.{hierarchy}", dtcg_type: color, description: "x" }
+
+theming:
+  modifiers: {}
+  set_mapping: {}
+
+naming:
+  css_prefix: "sa-"
+  token_prefix: "--sa-"
+  methodology: BEM
+  pattern: "block__element--modifier"
+  casing: { components: PascalCase }
+  reserved_names: {}

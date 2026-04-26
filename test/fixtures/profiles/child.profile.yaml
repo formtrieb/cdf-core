@@ -1,0 +1,15 @@
+name: Child
+version: "1.0.0"
+extends: "./parent.profile.yaml"
+
+vocabularies:
+  hierarchy: { description: "hierarchy axis", values: [primary, secondary, tertiary] }
+  intent: { description: "intent axis", values: [info, warn] }
+
+naming:
+  css_prefix: "ch-"
+  token_prefix: "--ch-"
+  methodology: BEM
+  pattern: "block__element--modifier"
+  casing: { components: PascalCase }
+  reserved_names: {}

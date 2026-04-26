@@ -1,0 +1,118 @@
+# Component Spec: Icon
+# Foundational primitive — nearly every other component composes this.
+# The icon itself is non-interactive; parent components control size and color.
+
+name: Icon
+category: Primitives
+description: >
+  Inline SVG icon rendered from the DS icon registry. Icons are referenced by
+  their DS-level name (e.g., "arrow-right"), which the registry resolves to an
+  SVG from either the standard set (Lucide) or custom SVGs (exported from Figma).
+  Color inherits via currentColor — parent components control it through their
+  hierarchy tokens. Size is set by the parent or directly via the size property.
+
+# ─── Theme Axes ────────────────────────────────────────────────────────────────
+# Icon has no theme axis of its own. It inherits color via currentColor and
+# size via explicit input from its parent component.
+
+theme_axes: {}
+
+# ─── Properties ────────────────────────────────────────────────────────────────
+
+properties:
+  name:
+    type: IconName
+    required: true
+    description: >
+      DS-level icon identifier. Must exist in the icon manifest.
+      Type-safe — the generated IconName union rejects unknown names at compile time.
+
+  size:
+    type: enum
+    values: [xsmall, small, base, large]
+    default: base
+    description: >
+      Icon dimensions. Maps to icon.size.* tokens (xsmall=12px, small=16px,
+      base=20px, large=24px on the 4px grid). When used inside a parent component
+      (Button, TextField), the parent locks this — consumers don't set it directly.
+
+  decorative:
+    type: boolean
+    default: true
+    description: >
+      Whether this icon is purely decorative (aria-hidden="true"). Default true
+      because most icons appear alongside text that already provides meaning.
+      Set to false + provide label for standalone semantic icons.
+
+  label:
+    type: string
+    optional: true
+    description: >
+      Accessible label for non-decorative icons. Required when decorative=false.
+      Rendered as aria-label on the SVG element.
+
+# ─── States ────────────────────────────────────────────────────────────────────
+# Icon has no interactive states of its own. Parent components drive visual
+# changes via currentColor.
+
+states: {}
+
+# ─── Anatomy ───────────────────────────────────────────────────────────────────
+
+anatomy:
+  container:
+    element: inline-flex-box
+    description: >
+      Host element. Provides inline-flex centering and flex-shrink: 0 so the
+      icon holds its dimensions inside flex layouts.
+
+  svg:
+    element: svg
+    description: >
+      The SVG element. fill: currentColor inherits color from parent.
+      Width and height set via icon.size.* CSS custom properties.
+
+# ─── Token Mapping ─────────────────────────────────────────────────────────────
+
+tokens:
+  svg:
+    width: icon.size.{size}
+    height: icon.size.{size}
+    fill: currentColor  # Inherited — no icon-specific color token
+  container:
+    display: inline-flex
+
+# ─── Accessibility ─────────────────────────────────────────────────────────────
+
+accessibility:
+  element: svg  # Not a <button> — icons are not interactive on their own
+  roles:
+    - "role='img' — always present on the SVG element"
+  aria:
+    - "aria-hidden='true' — when decorative=true (default). Hides from AT."
+    - "aria-label='{label}' — when decorative=false. Provides accessible name."
+  keyboard: {}  # No keyboard interaction — icon is not focusable
+
+# ─── Figma ─────────────────────────────────────────────────────────────────────
+# In Figma, icons are individual components (one per icon name × size).
+# The manifest drives which icon components exist in the Figma library.
+
+figma:
+  component_set_name: Icon
+  variant_properties:
+    name: "from manifest"  # Dynamic — generated from icons/manifest.yaml
+    size: [xsmall, small, base, large]
+  notes: >
+    Each icon in the manifest gets a Figma component with 4 size variants.
+    SVG content is placed inside the component frame. Color uses Figma's
+    "Preferred values" on the fill to reference the icon color tokens.
+
+# ─── References ────────────────────────────────────────────────────────────────
+
+references:
+  - name: Lucide Icons
+    url: https://lucide.dev
+    use: Primary icon set — stroke-based, ISC license, Angular-native package
+  - name: WAI — Images Tutorial
+    url: https://www.w3.org/WAI/tutorials/images/decorative/
+    use: Decorative vs informative image patterns

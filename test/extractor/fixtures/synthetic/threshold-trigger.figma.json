@@ -1,0 +1,48 @@
+{
+  "name": "fixture-threshold-trigger",
+  "document": {
+    "children": [
+      { "name": "--- Intro ---", "type": "CANVAS", "children": [] },
+      {
+        "name": "Controls",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "1:1", "type": "COMPONENT_SET", "name": "Button",
+            "children": [{ "id": "1:2", "type": "COMPONENT", "name": "State=enabled" }],
+            "componentPropertyDefinitions": { "State": { "type": "VARIANT", "variantOptions": ["enabled"] } }
+          },
+          {
+            "id": "1:3", "type": "COMPONENT_SET", "name": "TextField",
+            "children": [{ "id": "1:4", "type": "COMPONENT", "name": "State=enabled" }],
+            "componentPropertyDefinitions": { "State": { "type": "VARIANT", "variantOptions": ["enabled"] } }
+          },
+          {
+            "id": "1:5", "type": "COMPONENT_SET", "name": "Checkbox",
+            "children": [{ "id": "1:6", "type": "COMPONENT", "name": "State=enabled" }],
+            "componentPropertyDefinitions": { "State": { "type": "VARIANT", "variantOptions": ["enabled"] } }
+          },
+          {
+            "id": "1:7", "type": "COMPONENT_SET", "name": "Frame 42",
+            "children": [{ "id": "1:8", "type": "COMPONENT", "name": "Variant=default" }],
+            "componentPropertyDefinitions": { "Variant": { "type": "VARIANT", "variantOptions": ["default"] } }
+          },
+          {
+            "id": "1:9", "type": "COMPONENT_SET", "name": "Badge",
+            "children": [{ "id": "1:10", "type": "COMPONENT", "name": "Variant=default" }],
+            "componentPropertyDefinitions": { "Variant": { "type": "VARIANT", "variantOptions": ["default"] } }
+          }
+        ]
+      },
+      { "name": "--- Scratch ---", "type": "CANVAS", "children": [] }
+    ]
+  },
+  "componentSets": {
+    "1:1":  { "name": "Button" },
+    "1:3":  { "name": "TextField" },
+    "1:5":  { "name": "Checkbox" },
+    "1:7":  { "name": "Frame 42" },
+    "1:9":  { "name": "Badge" },
+    "9:99": { "name": "RemoteButton" }
+  }
+}

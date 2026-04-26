@@ -1,0 +1,68 @@
+snapshot_version: snapshot-profile-v1
+
+metadata:
+  ds_name: testfix
+  source:
+    figma_file_url: https://www.figma.com/design/FAKE
+    figma_file_name: testfix design library
+    tier: T2
+    token_regime: figma-variables
+    parent_profile: null
+  identifier: tf
+  generated_at: 2026-04-26T00:00:00Z
+  generated_by:
+    skill: cdf-profile-snapshot
+    skill_version: 0.1.0-spike
+    walker_version: phase-1-output-v1
+  cdf_version_compat: ">=1.0.0 <2.0.0"
+
+inventory:
+  pages:
+    total: 4
+    content: 3
+  component_sets:
+    tree_unique_count: 12
+    indexed_count: 14
+    remote_only_count: 2
+  standalone_components:
+    utility: 3
+    documentation: 1
+    widget: 0
+    asset: 5
+  documentation_surfaces:
+    figma_component_descriptions:
+      with_description: 4
+      without_description: 8
+      ratio: 0.333
+    doc_frames_detected: 2
+  tokens:
+    enumeration_method: browse_tokens
+    total_tokens: 87
+    note: "1 browse_tokens call, depth=2"
+
+blind_spots:
+  - "Findings classification status — 3 findings surfaced unclassified (no block/defer/adopt). Production Scaffold Phase-6 classifies."
+  - "Vocab-collision analysis across the 12 detected component sets not run — Profile §5.5 isolation pass would surface near-misses if present."
+  - "Validator status — Snapshot is NOT validator-grounded (cdf_validate_profile not run). Production Scaffold Phase-7 runs L0–L7."
+
+upgrade_path: |
+  Run cdf-profile-scaffold for the rigorous 7-phase scaffold. It can use
+  this snapshot as a Phase-1 seed (~5 min savings vs from-scratch).
+
+vocabularies:
+  _quality: draft
+  hierarchy:
+    description: Visual emphasis tier on interactive controls.
+    values: [primary, secondary, tertiary]
+    evidence_path: ds_inventory.component_sets.entries[0].propertyDefinitions.Hierarchy.variantOptions
+
+token_grammar:
+  _quality: draft
+  color.controls:
+    pattern: "color.controls.{hierarchy}.{element}.{state}"
+    dtcg_type: color
+    description: Interactive-control color tokens.
+    axes:
+      hierarchy:
+        vocabulary: hierarchy
+    evidence_path: token-mcp browse depth=2 namespace=color.controls
