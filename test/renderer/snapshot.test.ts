@@ -164,6 +164,72 @@ describe("renderSnapshot — edge cases", () => {
     expect(md).toMatch(/violates the trust handshake|No blind-spots declared/);
   });
 
+  it("emits the v1.7.3 'What this snapshot surfaced' block between BANNER and FINDINGS for Material-3-shape profile", () => {
+    // V1+V3 Material 3 shape: 8 vocabularies, 5 token grammars, 2 theming modifiers, 2 interaction patterns.
+    // Each section also carries a `_quality: draft` marker that must not be counted.
+    const profile: SnapshotProfile = {
+      ...loadProfile(),
+      vocabularies: {
+        _quality: "draft",
+        state: { values: ["enabled", "disabled"] },
+        selected: { values: ["true", "false"] },
+        size: { values: ["small", "medium", "large"] },
+        width: { values: ["full", "auto"] },
+        orientation: { values: ["horizontal", "vertical"] },
+        badge: { values: ["none", "dot"] },
+        density: { values: ["compact", "regular"] },
+        alignment: { values: ["start", "center", "end"] },
+      },
+      token_grammar: {
+        _quality: "draft",
+        schemes: { pattern: "color.scheme.{role}" },
+        state_layers: { pattern: "color.state-layer.{intent}" },
+        typescale: { pattern: "typography.{scale}" },
+        corner: { pattern: "shape.corner.{size}" },
+        font_primitives: { pattern: "typography.font.{family}" },
+      },
+      theming: {
+        _quality: "draft",
+        modifiers: {
+          color_scheme: { values: ["light", "dark"] },
+          font_theme: { values: ["plain", "expressive"] },
+        },
+      },
+      interaction_a11y: {
+        _quality: "draft",
+        patterns: {
+          state: { values: ["hover", "focus", "pressed"] },
+          selection: { values: ["single", "multi"] },
+        },
+      },
+    };
+    const md = renderSnapshot(profile, loadFindings());
+    const bannerEnd = md.indexOf("---");
+    const surfacedHeader = md.indexOf("## What this snapshot surfaced");
+    const findingsHeader = md.indexOf("## Findings — flag-only");
+    expect(surfacedHeader).toBeGreaterThan(bannerEnd);
+    expect(findingsHeader).toBeGreaterThan(surfacedHeader);
+    expect(md).toContain(
+      "8 vocabularies drafted (state, selected, size, …); 5 token grammars (schemes, state_layers, typescale, …); 2 theming modifiers; 2 interaction patterns.",
+    );
+  });
+
+  it("omits the v1.7.3 surfaced block when every counted section is empty or holds only `_`-prefixed keys", () => {
+    const profile: SnapshotProfile = {
+      ...loadProfile(),
+      vocabularies: { _quality: "draft" },
+      token_grammar: { _quality: "draft" },
+      theming: { _quality: "draft", modifiers: { _quality: "draft" } },
+      interaction_a11y: { _quality: "draft", patterns: {} },
+    };
+    const md = renderSnapshot(profile, loadFindings());
+    expect(md).not.toContain("## What this snapshot surfaced");
+    // Pre-v1.7.3 BANNER → FINDINGS adjacency preserved when block is suppressed.
+    const bannerEnd = md.indexOf("---");
+    const findingsHeader = md.indexOf("## Findings — flag-only");
+    expect(findingsHeader).toBeGreaterThan(bannerEnd);
+  });
+
   it("collapses multiline observations to a single line per finding bullet", () => {
     const findings: SnapshotFindings = {
       ...loadFindings(),

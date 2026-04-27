@@ -70,28 +70,90 @@ export function renderSnapshot(
   }
 
   const banner = renderBanner({ dsName, prefix, generatedAt, tier, tokenRegime });
+  const surfacedSection = formatSurfacedSummary(profile);
   const findingsSection = renderFindings(findings.findings);
   const blindSpotsSection = renderBlindSpots(profile.blind_spots ?? []);
   const upgradeSection = renderUpgrade({ upgradePath, dsName, prefix });
 
-  // Layout mirrors render-snapshot.sh:
-  //   `# <ds> — Snapshot\n\n` + BANNER + `\n\n` + hr + FINDINGS + hr + BLIND_SPOTS + hr + UPGRADE
-  // hr := `---\n\n`. Each render_* helper handles its own internal trailing
-  // whitespace so the joins below stay regular.
-  // Bash heredoc adds \n after the last banner line, then `printf '\n\n'`
-  // adds two more, then hr is `---\n\n`. Net 3 newlines between banner end
-  // and the divider — matches bash byte-for-byte.
+  // Layout mirrors render-snapshot.sh, with v1.7.3 surfaced-summary block
+  // inserted between BANNER and FINDINGS:
+  //   `# <ds> — Snapshot\n\n` + BANNER + `\n\n` + hr + [SURFACED + hr]? + FINDINGS + hr + BLIND_SPOTS + hr + UPGRADE
+  // hr := `---\n\n`. SURFACED emits its own trailing hr only when non-empty;
+  // an all-empty profile (every counted section has 0 real keys) collapses
+  // back to the pre-v1.7.3 byte-layout.
   return (
     `# ${dsName} — Snapshot\n\n` +
     banner +
     "\n\n\n" +
     "---\n\n" +
+    surfacedSection +
     findingsSection +
     "---\n\n" +
     blindSpotsSection +
     "---\n\n" +
     upgradeSection
   );
+}
+
+/**
+ * Emit a "What this snapshot surfaced" block listing structural sections the
+ * profile drafted (vocabularies / token_grammar / theming.modifiers /
+ * interaction_a11y.patterns). Returns empty string if every counted section is
+ * absent or contains only `_`-prefixed metadata keys (e.g. `_quality: draft`).
+ *
+ * Counter-balances the BANNER + FINDINGS pair so first-touch readers see what
+ * the snapshot *captured*, not just what it flagged. Origin: V1+V3 Material 3
+ * retro item 10 (false-negative trust signal).
+ */
+function formatSurfacedSummary(profile: SnapshotProfile): string {
+  const parts: string[] = [];
+
+  const vocabKeys = countableKeys(profile.vocabularies);
+  if (vocabKeys.length > 0) {
+    const noun = vocabKeys.length === 1 ? "vocabulary" : "vocabularies";
+    parts.push(`${vocabKeys.length} ${noun} drafted ${formatKeyExamples(vocabKeys)}`);
+  }
+
+  const grammarKeys = countableKeys(profile.token_grammar);
+  if (grammarKeys.length > 0) {
+    const noun = grammarKeys.length === 1 ? "grammar" : "grammars";
+    parts.push(`${grammarKeys.length} token ${noun} ${formatKeyExamples(grammarKeys)}`);
+  }
+
+  const theming = readSection(profile.theming);
+  const modifierKeys = countableKeys(theming?.modifiers);
+  if (modifierKeys.length > 0) {
+    const noun = modifierKeys.length === 1 ? "modifier" : "modifiers";
+    parts.push(`${modifierKeys.length} theming ${noun}`);
+  }
+
+  const interaction = readSection(profile.interaction_a11y);
+  const patternKeys = countableKeys(interaction?.patterns);
+  if (patternKeys.length > 0) {
+    const noun = patternKeys.length === 1 ? "pattern" : "patterns";
+    parts.push(`${patternKeys.length} interaction ${noun}`);
+  }
+
+  if (parts.length === 0) return "";
+
+  return `## What this snapshot surfaced\n\n${parts.join("; ")}.\n\n---\n\n`;
+}
+
+function readSection(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  return value as Record<string, unknown>;
+}
+
+function countableKeys(section: unknown): string[] {
+  const obj = readSection(section);
+  if (!obj) return [];
+  return Object.keys(obj).filter((k) => !k.startsWith("_"));
+}
+
+function formatKeyExamples(keys: string[]): string {
+  const sample = keys.slice(0, 3);
+  const ellipsis = keys.length > 3 ? ", …" : "";
+  return `(${sample.join(", ")}${ellipsis})`;
 }
 
 function renderBanner(args: {

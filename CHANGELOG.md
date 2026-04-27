@@ -5,6 +5,37 @@ All notable changes to `@formtrieb/cdf-core` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] — 2026-04-27
+
+### Added — `renderSnapshot` emits "What this snapshot surfaced" block between BANNER and FINDINGS
+
+The snapshot renderer now surfaces structural counts the profile drafted
+(vocabularies, token grammars, theming modifiers, interaction patterns)
+in a dedicated block between the DRAFT banner and the findings list.
+Origin: V1+V3 Material 3 retro item 10 — readers of `findings.md`
+previously saw only "14 findings → 11 blind-spots" and missed that the
+companion `profile.yaml` carried 8 vocabs / 5 grammars / 2 modifiers /
+2 patterns. That false-negative trust signal is now counterbalanced by
+showing what the snapshot *captured*.
+
+- `formatSurfacedSummary(profile)` counts top-level keys per section,
+  excluding any starting with `_` (`_quality: draft` markers).
+- Vocabularies + grammars list the first three keys with an ellipsis
+  if more exist; modifiers + patterns emit count only.
+- Profiles where every counted section is empty (or holds only
+  `_`-prefixed keys) collapse back to the pre-1.0.4 byte-layout — no
+  misleading empty header.
+
+The bash reference renderer (`scripts/render-snapshot.sh`) was updated
+in lockstep so the `golden-parity` test stays byte-identical. Tests
+went from 427 → 429 (two new snapshot.test.ts cases — happy-path
+Material-3-shape + all-empty suppression).
+
+Public surface unchanged: `renderSnapshot` keeps the same signature,
+the `SnapshotProfile` type already permitted arbitrary top-level keys
+via `[key: string]: unknown`, and the new `formatSurfacedSummary`
+helper is module-private.
+
 ## [1.0.3] — 2026-04-26
 
 ### Fixed — `parseConfigFile` crashes when `profile_path` set but file missing
