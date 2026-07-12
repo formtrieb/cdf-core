@@ -1,0 +1,28 @@
+[
+  {
+    "id": "light",
+    "name": "Light",
+    "group": "Semantic",
+    "selectedTokenSets": {
+      "Foundation/colors": "source",
+      "Semantic/light": "enabled"
+    }
+  },
+  {
+    "id": "dark",
+    "name": "Dark",
+    "group": "Semantic",
+    "selectedTokenSets": {
+      "Foundation/colors": "source",
+      "Semantic/dark": "enabled"
+    }
+  },
+  {
+    "id": "desktop",
+    "name": "Desktop",
+    "group": "Device",
+    "selectedTokenSets": {
+      "Device/desktop": "enabled"
+    }
+  }
+]

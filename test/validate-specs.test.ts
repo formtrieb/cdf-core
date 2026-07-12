@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { resolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
 import {
   validateAll,
   validateFile,
   validate,
   parseCDF,
   parseCDFFile,
+  parseProfileFile,
   resolveInheritance,
   expandTokenPath,
   suggestImprovements,
@@ -25,6 +27,91 @@ describe("structural rules", () => {
   it("required-fields: inheriting component may omit anatomy, tokens, accessibility", () => {
     const report = validate({ name: "Child", category: "Test", description: "t", inherits: "parent.component.yaml" } as CDFComponent);
     expect(report.errors.filter((e) => e.rule === "required-fields")).toHaveLength(0);
+  });
+
+  // ── PR-B: description / tokens / accessibility required → optional ──────────
+
+  it("description-recommended: missing description is a warning, not a blocking error", () => {
+    const comp = {
+      name: "NoDesc",
+      category: "Test",
+      anatomy: { c: { element: "box", description: "t" } },
+      tokens: { c: {} },
+      accessibility: { element: "div", "focus-visible": false, keyboard: {}, aria: [] },
+    } as CDFComponent;
+    const report = validate(comp);
+    expect(report.errors.filter((e) => e.path === "description")).toEqual([]);
+    expect(report.warnings).toContainEqual(expect.objectContaining({ rule: "description-recommended", path: "description" }));
+    expect(report.valid).toBe(true);
+  });
+
+  it("description-recommended: present description produces no such warning", () => {
+    const report = validate(makeCDF({}));
+    expect(report.warnings.filter((e) => e.rule === "description-recommended")).toEqual([]);
+  });
+
+  it("required-fields: headless component may omit tokens and accessibility", () => {
+    const comp = {
+      name: "Separator",
+      category: "Primitive",
+      description: "A thin dividing rule with no paint and no interaction.",
+      anatomy: { container: { element: "div", description: "the line" } },
+    } as CDFComponent;
+    const report = validate(comp);
+    expect(report.errors.filter((e) => e.rule === "required-fields")).toEqual([]);
+    expect(report.valid).toBe(true);
+  });
+
+  it("required-fields: anatomy stays required (non-inheriting component without it errors)", () => {
+    const comp = { name: "X", category: "Test", description: "t" } as CDFComponent;
+    const report = validate(comp);
+    expect(report.errors).toContainEqual(expect.objectContaining({ rule: "required-fields", path: "anatomy" }));
+  });
+
+  // ── PR-C: prefer-value-map-for-property-modifier (CDF-CON-010) ──────────────
+  // value-map is canonical for property-driven scales; the `--value` suffix for
+  // a PROPERTY value is the discouraged spelling. State / boolean-axis-qualified
+  // / hybrid / value-map forms stay exempt. Convention rule → needs a Profile.
+
+  const emptyProfile = () =>
+    ({ token_grammar: {}, vocabularies: {}, interaction_patterns: {}, categories: {} }) as unknown as import("../src/types/profile.js").DSProfile;
+
+  it("prefer-value-map: a property-driven '--value' modifier warns", () => {
+    const comp = makeCDF({
+      properties: { hierarchy: { type: "enum", values: ["brand", "tertiary"], default: "brand", description: "t" } },
+      tokens: { container: { "background--tertiary": "color.x" } },
+    });
+    const report = validate(comp, { ds_profile: emptyProfile() } as CDFConfig);
+    expect(report.warnings).toContainEqual(
+      expect.objectContaining({ rule: "prefer-value-map-for-property-modifier", path: "tokens.container.background--tertiary" })
+    );
+  });
+
+  it("prefer-value-map: value-map, state-modifier, dotted axis-qualified, and boolean forms are exempt", () => {
+    const comp = makeCDF({
+      properties: { hierarchy: { type: "enum", values: ["brand", "tertiary"], default: "brand", description: "t" } },
+      states: { interaction: { values: ["enabled", "hover"], token_expandable: true, description: "t" } as import("../src/types/cdf.js").State },
+      tokens: {
+        container: {
+          background: { brand: "color.a", tertiary: "color.b" }, // value-map → exempt
+          "background--hover": "color.h", // state value → exempt
+          "border--selected.true": "color.s", // axis-qualified (dotted) → exempt
+          "opacity--true": "0.5", // boolean → exempt
+        } as unknown as import("../src/types/cdf.js").TokenMapping,
+      },
+    });
+    const report = validate(comp, { ds_profile: emptyProfile() } as CDFConfig);
+    expect(report.warnings.filter((w) => w.rule === "prefer-value-map-for-property-modifier")).toEqual([]);
+  });
+
+  it("prefer-value-map: a value that is BOTH a property and a state value is skipped (ambiguous)", () => {
+    const comp = makeCDF({
+      properties: { hierarchy: { type: "enum", values: ["brand", "active"], default: "brand", description: "t" } },
+      states: { interaction: { values: ["idle", "active"], token_expandable: true, description: "t" } as import("../src/types/cdf.js").State },
+      tokens: { container: { "background--active": "color.x" } }, // 'active' is both → skip
+    });
+    const report = validate(comp, { ds_profile: emptyProfile() } as CDFConfig);
+    expect(report.warnings.filter((w) => w.rule === "prefer-value-map-for-property-modifier")).toEqual([]);
   });
 
   it("name-format: lowercase name produces error", () => {
@@ -120,6 +207,95 @@ describe("structural rules", () => {
         message: expect.stringContaining("primary, secondary"),
       })
     );
+  });
+
+  // ── Example specs demonstrate the shorthand against their REAL Profile ──────
+  // PR-A migration: the published cdf/examples specs use `type: <vocab-key>`
+  // instead of duplicating the Profile vocabulary as an inline enum. These
+  // integration tests load the real example Profile + spec from disk, so they
+  // guard the public artifact (not a synthetic inline Profile).
+
+  const examplesDir = resolve(import.meta.dirname, "../../../cdf/examples");
+
+  // Each migrated (DS, spec, property, vocab-key). Precondition verified per
+  // entry: the Profile declares a vocabulary whose KEY === vocab-key and whose
+  // values EXACTLY equal the former inline enum, so the shorthand is
+  // semantics-preserving. Subset-mismatch properties (shadcn badge.variant,
+  // material3 button.size) intentionally stay inline — see the next test.
+  const MIGRATED: Array<[string, string, string, string]> = [
+    ["shadcn", "button", "variant", "variant"],
+    ["shadcn", "button", "size", "size"],
+    ["primer", "button", "variant", "button_variant"],
+    ["primer", "button", "size", "button_size"],
+    ["primer", "label", "scheme", "label_scheme"],
+    ["uswds", "button", "variant", "button_variant"],
+    ["uswds", "button", "size", "button_size"],
+    ["uswds", "alert", "intent", "alert_intent"],
+    ["uswds", "alert", "shape", "alert_variant_shape"],
+    ["material3", "button", "variant", "button_variant"],
+    ["material3", "button", "density", "density_step"],
+    ["material3", "fab", "variant", "fab_variant"],
+    ["material3", "fab", "size", "size"],
+    ["material3", "fab", "density", "density_step"],
+    ["radix", "separator", "orientation", "orientation"],
+  ];
+
+  it.each(MIGRATED)(
+    "%s %s: '%s' uses the vocab shorthand (type: %s) and validates against its real Profile",
+    (ds: string, spec: string, property: string, vocabKey: string) => {
+      const profile = parseProfileFile(resolve(examplesDir, `${ds}/${ds}.profile.yaml`));
+      const component = parseCDFFile(resolve(examplesDir, `${ds}/specs/${spec}.component.yaml`));
+      const prop = component.properties?.[property];
+      // demonstrates the shorthand — no inline enum duplication
+      expect(prop?.type).toBe(vocabKey);
+      expect(prop?.values).toBeUndefined();
+      // full regression guard: the migrated spec stays 0-error against its real
+      // Profile (catches property-type-valid, enum-has-values, AND any token
+      // value-map / reserved-vocabulary rule that reads the former inline values).
+      const report = validate(component, { ds_profile: profile } as CDFConfig);
+      expect(report.errors).toEqual([]);
+    }
+  );
+
+  it("subset-mismatch properties intentionally stay inline (not over-migrated)", () => {
+    // badge.variant = [default, secondary, destructive, outline] is a SUBSET of
+    // the `variant` vocab [.., ghost, link] → shorthand would widen the API.
+    const badge = parseCDFFile(resolve(examplesDir, "shadcn/specs/badge.component.yaml"));
+    expect(badge.properties?.variant?.type).toBe("enum");
+    // material3 button.size = [small, medium, large] is a SUBSET of the `size`
+    // vocab [.., extended].
+    const m3btn = parseCDFFile(resolve(examplesDir, "material3/specs/button.component.yaml"));
+    expect(m3btn.properties?.size?.type).toBe("enum");
+  });
+
+  it("vocab shorthand requires the Profile (no Profile → property-type-valid error)", () => {
+    const button = parseCDFFile(resolve(examplesDir, "shadcn/specs/button.component.yaml"));
+    const report = validate(button); // no profile loaded
+    const typeError = report.errors.find((e) => e.rule === "property-type-valid");
+    expect(typeError).toBeDefined();
+    expect(typeError!.message).toContain("No Profile loaded");
+  });
+
+  it("no example spec claims the validator rejects the §7.2 shorthand (stale-comment guard)", () => {
+    // The shorthand shipped in cdf-core (commit 3d02927); the published examples
+    // must not tell readers/LLMs the format is broken. Guards against the false
+    // apology comments creeping back on re-generation.
+    const stale = /does not implement|doesn't implement|rejects it|shorthand workaround/i;
+    const offenders: string[] = [];
+    for (const d of readdirSync(examplesDir, { withFileTypes: true })) {
+      if (!d.isDirectory()) continue;
+      const specDir = resolve(examplesDir, d.name, "specs");
+      let files: string[];
+      try {
+        files = readdirSync(specDir);
+      } catch {
+        continue; // dir without a specs/ folder
+      }
+      for (const f of files.filter((x) => x.endsWith(".component.yaml"))) {
+        if (stale.test(readFileSync(resolve(specDir, f), "utf-8"))) offenders.push(`${d.name}/${f}`);
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 
   it("required-xor-default: property with neither produces error", () => {
@@ -364,9 +540,9 @@ describe("IconButton inheritance", () => {
     expect(resolved.properties!.hierarchy).toBeDefined();
     expect(resolved.anatomy.label).toBeUndefined();
     expect(resolved.anatomy.icon.conditional).toBeUndefined();
-    expect(resolved.tokens.container.width).toBe("controls.height.{size}");
-    expect(resolved.tokens.container["padding-inline"]).toBeUndefined();
-    expect(resolved.tokens.label).toBeUndefined();
+    expect(resolved.tokens!.container.width).toBe("controls.height.{size}");
+    expect(resolved.tokens!.container["padding-inline"]).toBeUndefined();
+    expect(resolved.tokens!.label).toBeUndefined();
   });
 });
 

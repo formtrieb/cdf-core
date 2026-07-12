@@ -1,0 +1,42 @@
+{
+  "name": "SmallDS",
+  "lastModified": "2026-04-28T12:00:00Z",
+  "thumbnailUrl": "",
+  "version": "1",
+  "document": {
+    "id": "0:0",
+    "name": "Document",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "1:0",
+        "name": "Components",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "1:1",
+            "name": "Button",
+            "type": "COMPONENT_SET",
+            "componentPropertyDefinitions": {
+              "intent": { "type": "VARIANT", "variantOptions": ["primary", "secondary"] }
+            },
+            "children": []
+          },
+          {
+            "id": "1:2",
+            "name": "Tag",
+            "type": "COMPONENT_SET",
+            "componentPropertyDefinitions": {
+              "intent": { "type": "VARIANT", "variantOptions": ["primary", "info"] }
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "componentSets": {
+    "1:1": { "name": "Button" },
+    "1:2": { "name": "Tag" }
+  }
+}

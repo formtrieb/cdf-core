@@ -75,6 +75,7 @@ export type { ProfileValidationOptions } from "./validator/profile/index.js";
 
 // Resolver
 export { expandTokenPath, extractPlaceholders, parseTokenKey } from "./resolver/token-expander.js";
+export { expandTokenTables } from "./resolver/token-table-expander.js";
 export { resolveInheritance, resolveExtension } from "./resolver/inheritance.js";
 
 // Analyzer
@@ -228,3 +229,43 @@ export type {
   SnapshotBlindSpot,
   SnapshotBlindSpotObject,
 } from "./renderer/types.js";
+
+// Snapshot library — v1.1.0 (Plan 1.1)
+// Note: Vocabulary/TokenLayer/ThemingModifier/AnalyzerOutput are named with
+// Snapshot prefix to avoid collision with the profile-level types above.
+export {
+  produceSnapshot,
+} from './snapshot/index.js';
+
+export type {
+  SnapshotInput,
+  SnapshotResult,
+  HintContext,
+  SnapshotVocabulary,
+  SnapshotTokenLayer,
+  SnapshotThemingModifier,
+  SnapshotAnalyzerOutput,
+  SetMappingEntry,
+} from './snapshot/index.js';
+
+// De-collapse engine — crammed-enum axis recovery
+export {
+  decollapse,
+} from './decollapse/index.js';
+
+export type {
+  CandidateAxis,
+  CellCoord,
+  ObservedCell,
+  MissingCell,
+  DecollapseResult,
+} from './decollapse/index.js';
+
+// Emitters — Profile -> agent-context formats
+export {
+  emitDesignMd,
+} from './emitter/index.js';
+
+export type {
+  EmitDesignMdOptions,
+} from './emitter/index.js';

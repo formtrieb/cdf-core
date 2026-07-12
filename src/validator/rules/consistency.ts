@@ -12,6 +12,21 @@ export function checkConsistency(component: CDFComponent, context?: ValidationCo
     ? new Set(context.components.keys())
     : undefined;
 
+  // ── description-recommended ────────────────────────────────────────────────
+  // §4.4: a description is RECOMMENDED for LLM-readability, not required. An
+  // unambiguous PascalCase name MAY stand in for prose (Article III). Distinct
+  // rule id (not `required-fields`) so consumers filtering required-fields
+  // errors keep their signal.
+  if (!component.description) {
+    issues.push({
+      severity: "warning",
+      path: "description",
+      message:
+        "Component SHOULD declare a 'description' — it is the primary surface LLMs read to decide whether the component fits a user need (§4.4). An unambiguous PascalCase name may suffice in its place.",
+      rule: "description-recommended",
+    });
+  }
+
   // ── component-ref-exists ──────────────────────────────────────────────────
   // Check that all referenced components have existing specs
   if (knownComponents && knownComponents.size > 0) {

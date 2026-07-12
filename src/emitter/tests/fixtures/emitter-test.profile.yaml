@@ -1,0 +1,96 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Emitter Test Profile — synthetic fixture for emitDesignMd() unit tests
+# ──────────────────────────────────────────────────────────────────────────────
+# Deliberately self-contained: does NOT depend on the private repo-root
+# formtrieb.profile.yaml, so packages/cdf-core keeps passing its own test
+# suite (and `prepublishOnly`) once rsynced standalone into the public
+# formtrieb/cdf-core repo, where that file does not exist.
+#
+# Shape follows cdf/specs/examples/minimal.profile.yaml (the smallest legal
+# Profile), with two additions the emitDesignMd tests specifically need:
+#
+#   - Two vocabularies that deliberately SHARE one value ("large") across
+#     vocabulary boundaries. This is not a legal Profile under CDF-STR-011
+#     (vocabulary values must be disjoint across axes) — but these tests
+#     only exercise parseProfile()/emitDesignMd(), never
+#     cdf_validate_profile(), so the illegal-but-parseable shape is safe to
+#     use here purely to prove the emitter's Components round-trip counts
+#     each vocabulary's values within its OWN "### " subsection, not across
+#     the whole section.
+#   - One interaction pattern with a state-keyed note (must render in the
+#     emitted Do's and Don'ts section) and a non-state-keyed note (must be
+#     filtered out — mirrors internal maintainer-only commentary that must
+#     never leak into the public artifact).
+
+name: EmitterTest
+version: "1.0.0"
+cdf_version: ">=1.0.0 <2.0.0"
+dtcg_version: "2025.10"
+description: >
+  Synthetic design system profile used only by emitDesignMd() unit tests.
+
+# ── Vocabularies ─────────────────────────────────────────────────────────────
+
+vocabularies:
+  size:
+    description: "Size scale for a test control."
+    values: [small, large]
+  density:
+    description: "Density scale for a test control."
+    values: [compact, large]
+
+# ── Token Grammar ────────────────────────────────────────────────────────────
+
+token_grammar:
+  color.control:
+    pattern: "color.control.{size}.background"
+    dtcg_type: color
+    description: "Single-family color tokens keyed by size."
+    axes:
+      size: { vocabulary: size }
+
+token_layers:
+  - name: Foundation
+    description: "All tokens live here in the test fixture."
+    grammars: [color.control]
+
+# ── Interaction Patterns ─────────────────────────────────────────────────────
+# One pattern with a state-keyed note (renders) and a non-state-keyed note
+# (filtered — mirrors the real Profile's maintainer-only notes such as
+# "composition" / "token_mapping_pattern" on formtrieb's `selectable`).
+
+interaction_patterns:
+  pressable:
+    description: >
+      Direct click/tap targets — exercises the Do's and Don'ts note filter.
+    states: [enabled, pressed]
+    notes:
+      pressed: >
+        Fixture state-keyed note: this line must appear in the emitted
+        Do's and Don'ts section.
+      internal_only: >
+        Fixture non-state-keyed note: this line must NOT appear in the
+        emitted Do's and Don'ts section — it is internal commentary keyed
+        by something other than a declared state.
+
+# ── Theming ──────────────────────────────────────────────────────────────────
+# No theme axes needed for these tests.
+
+theming: {}
+
+# ── Naming ───────────────────────────────────────────────────────────────────
+
+naming:
+  identifier: "et"
+  casing:
+    component_names: PascalCase
+    properties: camelCase
+    token_paths: camelCase
+  reserved_names: {}
+
+# ── Categories ───────────────────────────────────────────────────────────────
+
+categories:
+  Primitive:
+    description: "Non-interactive, visual-only elements."
+    interaction: pressable

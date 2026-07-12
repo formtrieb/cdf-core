@@ -1,0 +1,7 @@
+{
+  "componentSets": [
+    {"name": "Button", "properties": {"intent": ["primary", "secondary"], "size": ["s", "m", "l"]}},
+    {"name": "Tag",    "properties": {"intent": ["primary", "info"], "size": ["s", "m"]}},
+    {"name": "StatusChip", "properties": {"intent": ["success", "warning", "danger"]}}
+  ]
+}

@@ -16,21 +16,16 @@ export function checkStructural(component: CDFComponent, context?: ValidationCon
   if (!component.category) {
     issues.push({ severity: "error", path: "category", message: "Required field 'category' is missing.", rule: "required-fields" });
   }
-  if (!component.description) {
-    issues.push({ severity: "error", path: "description", message: "Required field 'description' is missing.", rule: "required-fields" });
-  }
-  // anatomy: required unless component uses inherits (anatomy_overrides modify parent's anatomy)
+  // description: RECOMMENDED, not required (§4.4). Absence surfaces as the
+  // `description-recommended` warning in consistency.ts, not a blocking error.
+  // anatomy: required unless component uses inherits (anatomy_overrides modify parent's anatomy).
+  // anatomy is the token namespace (CDF-SEM-001) so it stays a hard requirement.
   if (!component.anatomy && !component.inherits) {
     issues.push({ severity: "error", path: "anatomy", message: "Required field 'anatomy' is missing.", rule: "required-fields" });
   }
-  // tokens: required unless component uses inherits (tokens_overrides modify parent's tokens)
-  if (!component.tokens && !component.inherits) {
-    issues.push({ severity: "error", path: "tokens", message: "Required field 'tokens' is missing.", rule: "required-fields" });
-  }
-  // accessibility: required unless component uses inherits (accessibility_overrides modify parent's)
-  if (!component.accessibility && !component.inherits) {
-    issues.push({ severity: "error", path: "accessibility", message: "Required field 'accessibility' is missing.", rule: "required-fields" });
-  }
+  // tokens / accessibility: OPTIONAL (§3, healed against §15). Headless or
+  // decorative components own no paint and may inherit a11y defaults from the
+  // category — they need not declare these blocks. Absence is no longer an error.
 
   // ── name-format ─────────────────────────────────────────────────────────────
   if (component.name && !/^[A-Z][a-zA-Z0-9]*$/.test(component.name)) {
@@ -677,7 +672,7 @@ function cellResolves(
   key: string,
   cell: Record<string, string | boolean>
 ): boolean {
-  const base = component.tokens[partName];
+  const base = component.tokens?.[partName];
   if (!base) return false;
 
   // Base key present (ignoring modifiers) is enough for "resolvable".

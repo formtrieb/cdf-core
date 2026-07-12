@@ -8,7 +8,8 @@
 export interface CDFComponent {
   name: string;
   category: string;
-  description: string;
+  /** RECOMMENDED (§4.4), not required — absence is the `description-recommended` warning. */
+  description?: string;
 
   // Composition
   extends?: string;
@@ -32,8 +33,8 @@ export interface CDFComponent {
   anatomy_overrides?: Record<string, AnatomyOverride>;
   slots?: Record<string, Slot>;
 
-  // Visual contract
-  tokens: Record<string, TokenMapping>;
+  // Visual contract — OPTIONAL (§3): headless/decorative components own no paint.
+  tokens?: Record<string, TokenMapping>;
   tokens_overrides?: Record<string, TokenOverride>;
   token_gaps?: string[];
   destructive_mapping?: DestructiveMapping;
@@ -44,7 +45,8 @@ export interface CDFComponent {
 
   // Behavioral contract
   behavior?: Record<string, Behavior>;
-  accessibility: Accessibility;
+  // accessibility — OPTIONAL (§3): may be omitted when fully inheriting category defaults (§15.2).
+  accessibility?: Accessibility;
   accessibility_overrides?: AccessibilityOverride;
 
   // Implementation guidance
@@ -186,6 +188,22 @@ export interface Slot {
 export type TokenMapping = Record<string, TokenValue>;
 
 export type TokenValue = string | Record<string, string> | null;
+
+/**
+ * token_table (§13.3.1) — optional build-time matrix-compression block that may
+ * appear under a part instead of hand-written value-maps. Expanded to flat
+ * §13.3 value-maps at parse time (see `expandTokenTables`), so it never reaches
+ * the validator/coverage/generator. A cell is either a rest-token string (states
+ * derived via the `states` step map) or an explicit `{ rest, <state>: … }` map.
+ */
+export interface TokenTable {
+  /** The property or state axis whose values are the table's rows. */
+  axis: string;
+  /** Optional per-state step templates over the rest token name, e.g. `{ hover: "{rest}-dark" }`. */
+  states?: Record<string, string>;
+  /** Each remaining key is a CSS-property column: row → rest token | explicit-cell map. */
+  [column: string]: string | Record<string, string> | Record<string, string | Record<string, string>> | undefined;
+}
 
 export interface TokenOverride {
   removed?: boolean;

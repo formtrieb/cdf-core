@@ -1,0 +1,7 @@
+{
+  "$themes": [
+    {"group": "Semantic", "name": "Light", "selectedTokenSets": {"Semantic/light": "enabled"}},
+    {"group": "Semantic", "name": "Dark",  "selectedTokenSets": {"Semantic/dark": "enabled"}},
+    {"group": "Device", "name": "Desktop", "selectedTokenSets": {"Device/desktop": "enabled"}}
+  ]
+}

@@ -10,9 +10,9 @@
  *      logging if byte-parity is unreachable.
  *
  * Hard requirement (per Plan §N1.6): ≥ 5 fixtures byte-identical OR drift
- * documented in DIARY. Three real-DS fixtures (ComponentTest/material/
- * primer) are gated behind file existence so the suite stays green when
- * the heavy library.file.json blobs aren't checked out locally.
+ * documented in DIARY. Three real-DS fixtures (fixtures/{ComponentTest,
+ * material,primer}) are gated behind file existence so the suite stays
+ * green when the heavy library.file.json blobs aren't checked out locally.
  */
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
@@ -59,17 +59,17 @@ const CASES: ParityCase[] = [
   { name: "no-triggers", inputPath: join(SYNTH, "no-triggers.figma.json") },
   {
     name: "real-ComponentTest",
-    inputPath: join(MONOREPO_ROOT, "ComponentTest/data/library.file.json"),
+    inputPath: join(MONOREPO_ROOT, "fixtures/ComponentTest/data/library.file.json"),
     optional: true,
   },
   {
     name: "real-material",
-    inputPath: join(MONOREPO_ROOT, "material/data/library.file.json"),
+    inputPath: join(MONOREPO_ROOT, "fixtures/material/data/library.file.json"),
     optional: true,
   },
   {
     name: "real-primer",
-    inputPath: join(MONOREPO_ROOT, "primer/data/library.file.json"),
+    inputPath: join(MONOREPO_ROOT, "fixtures/primer/data/library.file.json"),
     optional: true,
     allowYqWhitespaceDrift: true,
   },

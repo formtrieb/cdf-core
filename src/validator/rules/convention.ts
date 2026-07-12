@@ -124,6 +124,42 @@ function checkWithDSProfile(component: CDFComponent, profile: DSProfile): Issue[
     }
   }
 
+  // ── prefer-value-map-for-property-modifier (CDF-CON-010) ────────────────────
+  // §13.3: the value-map form is canonical for property-driven scales. A bare
+  // `{css-prop}--{value}` modifier whose value is a PROPERTY value is the
+  // discouraged spelling — nudge toward the value-map. EXEMPT: state-value
+  // modifiers, boolean true/false, axis-qualified (dotted) forms, hybrid
+  // (object-valued) entries, and values that are BOTH a property and a state
+  // value (ambiguous → conservatively skipped, state takes precedence).
+  if (component.tokens) {
+    const propertyValues = new Set<string>();
+    for (const prop of Object.values(component.properties ?? {})) {
+      const vals = prop.values ?? (prop.type ? profile.vocabularies?.[prop.type]?.values : undefined);
+      for (const v of vals ?? []) propertyValues.add(String(v));
+    }
+    const stateValues = new Set<string>();
+    for (const st of Object.values(component.states ?? {})) {
+      for (const v of st.values ?? []) stateValues.add(String(v));
+    }
+    for (const [partName, mapping] of safeEntries<Record<string, unknown>>(component.tokens, "tokens", issues)) {
+      for (const [tokenKey, tokenValue] of safeEntries(mapping, `tokens.${partName}`, issues)) {
+        if (typeof tokenValue !== "string") continue; // hybrid / value-map (object) → exempt
+        const m = /^(.+)--([^.]+)$/.exec(tokenKey); // single segment after `--`; dotted (axis-qualified) excluded
+        if (!m) continue;
+        const mod = m[2];
+        if (mod === "true" || mod === "false") continue; // boolean → exempt
+        if (stateValues.has(mod)) continue; // state-value modifier (incl. overlap) → exempt
+        if (!propertyValues.has(mod)) continue; // not a known property value → leave alone
+        issues.push({
+          severity: "warning",
+          path: `tokens.${partName}.${tokenKey}`,
+          message: `Token '${tokenKey}' uses the '--${mod}' modifier suffix for a property-driven value; the value-map form '${m[1]}: { ${mod}: … }' is canonical (§13.3). Both are accepted — prefer the value-map.`,
+          rule: "prefer-value-map-for-property-modifier",
+        });
+      }
+    }
+  }
+
   return issues;
 }
 
