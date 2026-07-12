@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolve } from "node:path";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import {
   validateAll,
   validateFile,
@@ -217,6 +217,11 @@ describe("structural rules", () => {
 
   const examplesDir = resolve(import.meta.dirname, "../../../cdf/examples");
 
+  // Monorepo-only integration block: cdf/examples lives at the monorepo root
+  // and does not ship with the standalone public repo — same skip convention
+  // as test/renderer/golden-parity.test.ts and test/profile-scaffold/prior-art.test.ts.
+  describe.skipIf(!existsSync(examplesDir))("cdf/examples integration (monorepo-only)", () => {
+
   // Each migrated (DS, spec, property, vocab-key). Precondition verified per
   // entry: the Profile declares a vocabulary whose KEY === vocab-key and whose
   // values EXACTLY equal the former inline enum, so the shorthand is
@@ -297,6 +302,8 @@ describe("structural rules", () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  }); // end cdf/examples integration (monorepo-only)
 
   it("required-xor-default: property with neither produces error", () => {
     const comp = makeCDF({ properties: { label: { type: "string", description: "t" } } });
